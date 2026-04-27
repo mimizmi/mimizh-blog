@@ -5,7 +5,7 @@ description: 如何构建一个合理的基于磁盘的数据库缓存系统？
 tags: [database, cmu, replacer, cpp]
 reading_time: 30 min
 ---
-> [ARC: A SELF-TUNING, LOW OVERHEAD REPLACEMENT CACHE](/archieve/database-cmu/arcfast.pdf) 前排强烈建议深入阅读该论文
+> [ARC: A SELF-TUNING, LOW OVERHEAD REPLACEMENT CACHE](./assets/database-cmu/arcfast.pdf) 前排强烈建议深入阅读该论文
 
 [Project1](https://15445.courses.cs.cmu.edu/fall2025/project1/)
 ## 缓存策略 Cache Replacement Policy
