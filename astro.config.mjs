@@ -5,7 +5,7 @@ import astroExpressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';  // 新增这行
 
 export default defineConfig({
-  site: 'https://20250430.xyz',
+  site: 'https://mimizh.dpdns.org',
   integrations: [
     astroExpressiveCode({
       themes: ['github-dark'],
