@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { buildProjectTree, flattenNodes, getFolderColor, STATUS_COLORS } from '../../utils/tree';
+
+const tree = await buildProjectTree();
+const topFolders = tree.filter(n => n.type === 'folder');
+const allProjs = flattenNodes(tree);
+const statuses = ['全部', ...new Set(allProjs.map(n => n.status || '').filter(Boolean))];
+---
+
+<BaseLayout title="项目" activeNav="projects">
+  <div class="main main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+    <div class="page fu">
+      <div class="ph">
+        <div class="pt">项目</div>
+        <div class="pd">自己做的一些小东西</div>
+      </div>
+
+      {topFolders.length > 0 && (
+        <div class="cat-grid" style="margin-bottom:1.5rem">
+          {topFolders.map(f => (
+            <a class="cat-c" href={`/projects/${f.segments.join('/')}/`}>
+              <div class="cat-c-dot" style={`background:${getFolderColor(f.segments.join('/'))}`}></div>
+              <div class="cat-c-name">{f.name}</div>
+              <div class="cat-c-meta">{f.count} 个项目</div>
+            </a>
+          ))}
+        </div>
+      )}
+
+      <div class="proj-filter">
+        <input class="proj-search" id="proj-search" placeholder="搜索项目名称、描述、标签…" />
+        {statuses.filter(Boolean).map((s, i) => (
+          <button class={`proj-ftag${i === 0 ? ' on' : ''}`} data-status={s}>{s}</button>
+        ))}
+      </div>
+      <div class="proj-grid" id="proj-grid">
+        {allProjs.map(n => {
+          const statusColor = STATUS_COLORS[n.status || ''] || 'var(--tx3)';
+          return (
+            <a class="proj-card" href={`/projects/${n.segments.join('/')}/`}
+              data-search={`${n.projectEntry?.data.title || ''} ${n.tagline||''} ${(n.tags||[]).join(' ')}`.toLowerCase()}
+              data-status={n.status || ''}>
+              <div class="proj-card-top">
+                <div class="proj-ic">{n.icon || '◆'}</div>
+                <div class="proj-st"><span class="proj-st-dot" style={`background:${statusColor}`}></span>{n.status}</div>
+              </div>
+              <div class="proj-name">{n.projectEntry?.data.title || n.name}</div>
+              {n.tagline && <div class="proj-tagline">{n.tagline}</div>}
+              <div class="proj-desc">{n.tagline || ''}</div>
+              {n.tags && n.tags.length > 0 && (
+                <div class="proj-tags">{n.tags.map(t => <span class="proj-tag">{t}</span>)}</div>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function(){
+      var searchInput = document.getElementById('proj-search');
+      var grid = document.getElementById('proj-grid');
+      var filterBtns = document.querySelectorAll('.proj-ftag');
+      searchInput.addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        grid.querySelectorAll('.proj-card').forEach(function(card) {
+          var txt = card.getAttribute('data-search') || '';
+          card.style.display = q && txt.indexOf(q) === -1 ? 'none' : '';
+        });
+      });
+      filterBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          filterBtns.forEach(function(b) { b.classList.remove('on'); });
+          this.classList.add('on');
+          var status = this.getAttribute('data-status');
+          grid.querySelectorAll('.proj-card').forEach(function(card) {
+            var s = card.getAttribute('data-status');
+            card.style.display = (status && status !== '全部' && s !== status) ? 'none' : '';
+          });
+          if (searchInput) searchInput.value = '';
+        });
+      });
+    })();
+  </script>
+</BaseLayout>

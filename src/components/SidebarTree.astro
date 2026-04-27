@@ -1,0 +1,49 @@
+---
+import type { TreeNode } from '../utils/tree';
+
+interface Props {
+  nodes: TreeNode[];
+  ancestors: TreeNode[];
+  currentNode: TreeNode;
+  basePath: string;
+  depth?: number;
+}
+
+const { nodes, ancestors, currentNode, basePath, depth = 0 } = Astro.props;
+const indent = depth * 14;
+
+function getTitle(n: TreeNode) {
+  return n.note?.data.title || n.wikiEntry?.data.title || n.name;
+}
+---
+
+{nodes.map(n => {
+  const inPath = ancestors.some(a => a.name === n.name && a.depth === n.depth);
+  const isActive = currentNode && n.name === currentNode.name && n.depth === currentNode.depth;
+  const href = `${basePath}${n.segments.join('/')}/`;
+
+  if (n.type === 'folder') {
+    return (
+      <div>
+        <a class={`tr${isActive ? ' on' : ''}`} href={href}>
+          <span class="tr-arr" style={`transform:rotate(${inPath ? '90' : '0'}deg);margin-left:${indent}px`}>▶</span>
+          <span class="tr-lbl">{n.name}</span>
+          <span class="tr-badge">{n.count}</span>
+        </a>
+        {inPath && n.children && (
+          <Astro.self nodes={n.children} ancestors={ancestors} currentNode={currentNode} basePath={basePath} depth={depth + 1} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <a class={`tr${isActive ? ' on' : ''}`} href={href}>
+        <span style={`width:${indent + 9}px;flex-shrink:0`}></span>
+        <span class="tr-arr" style="opacity:0;pointer-events:none">▶</span>
+        <span class="tr-lbl">{getTitle(n)}</span>
+      </a>
+    </div>
+  );
+})}

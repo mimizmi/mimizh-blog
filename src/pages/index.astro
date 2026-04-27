@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const homeEntries = await getCollection('home');
+const h = homeEntries[0]?.data || {};
+const bio = (h.bio as string || '').trim().split('\n').filter((p: string) => p.trim());
+---
+
+<BaseLayout title={h.name || 'mimizh'} activeNav="home">
+  <div class="main main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+    <div class="home-wrap fu">
+      <h1 class="home-name">{h.greeting || `你好，我是 <em>${h.name || 'mimizh'}</em>`}</h1>
+      {bio.map((p: string) => <p class="home-p">{p.trim()}</p>)}
+      <hr class="home-hr" />
+      {h.work && <>
+        <div class="home-sec">工作</div>
+        <p class="home-p" style="font-size:.87rem">{h.work}</p>
+      </>}
+      <div class="home-sec">联系</div>
+      {h.email && <a href={`mailto:${h.email}`} class="home-link"><span class="home-link-ic">@</span>{h.email}</a>}
+      {h.github && <a href={`https://github.com/${h.github}`} class="home-link" target="_blank" rel="noopener"><span class="home-link-ic">↗</span>GitHub · @{h.github}</a>}
+      {h.twitter && <a href={`https://twitter.com/${h.twitter}`} class="home-link" target="_blank" rel="noopener"><span class="home-link-ic">↗</span>Twitter · @{h.twitter}</a>}
+      <hr class="home-hr" />
+      <p style="font-size:.74rem;color:var(--tx3);font-style:italic">{h.footer || '本站基于 mimizh-blog 构建，使用 Lora 与 Source Serif 4 字体。'}</p>
+    </div>
+  </div>
+</BaseLayout>

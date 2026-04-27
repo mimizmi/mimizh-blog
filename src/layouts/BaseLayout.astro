@@ -1,0 +1,265 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title: string;
+  activeNav?: 'home' | 'notes' | 'projects' | 'wiki';
+  breadcrumbs?: { label: string; href: string }[];
+}
+
+const { title, activeNav = 'home', breadcrumbs = [] } = Astro.props;
+const navItems = [
+  { id: 'notes', label: '笔记', href: '/notes/' },
+  { id: 'projects', label: '项目', href: '/projects/' },
+  { id: 'wiki', label: 'Wiki', href: '/wiki/' },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — mimizh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,300;1,8..60,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" />
+  <script is:inline>
+    (function(){var t=localStorage.getItem('mz_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var f=localStorage.getItem('mz_base')||'15';document.documentElement.style.fontSize=f+'px';var fb=localStorage.getItem('mz_body')||'1';document.documentElement.style.setProperty('--fs-body',fb);var fu=localStorage.getItem('mz_ui')||'1';document.documentElement.style.setProperty('--fs-ui',fu);var fw=localStorage.getItem('mz_width')||'760';document.documentElement.style.setProperty('--content-width',fw+'px');var fp=localStorage.getItem('mz_font')||'serif';var P={serif:{fh:"'Lora',Georgia,serif",fb:"'Source Serif 4',Georgia,serif",fm:"'JetBrains Mono',monospace"},sans:{fh:"'DM Sans',system-ui,sans-serif",fb:"'Inter',system-ui,sans-serif",fm:"'JetBrains Mono',monospace"},mono:{fh:"'Space Mono',monospace",fb:"'Atkinson Hyperlegible',system-ui,sans-serif",fm:"'JetBrains Mono',monospace"},cn:{fh:"'Noto Serif SC',Georgia,serif",fb:"'Noto Sans SC',system-ui,sans-serif",fm:"'JetBrains Mono',monospace"}}[fp];document.documentElement.style.setProperty('--fh',P.fh);document.documentElement.style.setProperty('--fb',P.fb);document.documentElement.style.setProperty('--fm',P.fm);})();
+  </script>
+</head>
+<body>
+  <div class="pbar" id="pbar" style="width:0"></div>
+  <div class="app">
+    <nav class="nav">
+      <a class="nav-logo" href="/">mimi<span>zh</span></a>
+      {breadcrumbs.length > 0 && (
+        <div class="nav-bc">
+          <a class="nav-bc-item link" href="/">~</a>
+          {breadcrumbs.map((bc, i) => (
+            <>
+              <span class="nav-bc-sep">/</span>
+              {i === breadcrumbs.length - 1
+                ? <span class="nav-bc-item cur">{bc.label}</span>
+                : <a class="nav-bc-item link" href={bc.href}>{bc.label}</a>
+              }
+            </>
+          ))}
+        </div>
+      )}
+      <div class="nav-links">
+        {navItems.map(n => (
+          <a class={`nav-btn${activeNav === n.id ? ' on' : ''}`} href={n.href}>{n.label}</a>
+        ))}
+      </div>
+      <div class="nav-sep"></div>
+      <button class="nav-ic" title="搜索 ⌘K" id="btn-search">⌕</button>
+      <button class="nav-ic" title="切换主题" id="btn-theme">◐</button>
+      <button class="nav-ic" title="显示设置" id="btn-settings">&#9881;</button>
+    </nav>
+    <slot />
+  </div>
+
+  <!-- Search overlay -->
+  <div class="search-ov" id="search-ov">
+    <div class="search-box">
+      <div class="search-top">
+        <span class="search-ic">⌕</span>
+        <input class="search-in" id="search-in" placeholder="搜索笔记、项目、Wiki…" />
+        <span class="search-esc">ESC</span>
+      </div>
+      <div class="search-results" id="search-results">
+        <div class="s-empty">输入关键词开始搜索</div>
+      </div>
+      <div class="s-footer">
+        <span class="s-hint"><span class="s-kbd">↵</span>打开</span>
+        <span class="s-hint"><span class="s-kbd">ESC</span>关闭</span>
+        <span class="s-hint"><span class="s-kbd">⌘K</span>搜索</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings panel -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="sp-header">
+      <span>显示设置</span>
+      <button class="sp-close" id="sp-close">&times;</button>
+    </div>
+    <div class="sp-body">
+      <label class="sp-row">
+        <span class="sp-label">基础字号 <span class="sp-val" id="sp-val-base">15px</span></span>
+        <input type="range" id="sp-base" min="12" max="22" value="15" step="0.5" />
+      </label>
+      <label class="sp-row">
+        <span class="sp-label">正文字号 <span class="sp-val" id="sp-val-body">1.0x</span></span>
+        <input type="range" id="sp-body" min="0.7" max="1.5" value="1.0" step="0.05" />
+      </label>
+      <label class="sp-row">
+        <span class="sp-label">界面字号 <span class="sp-val" id="sp-val-ui">1.0x</span></span>
+        <input type="range" id="sp-ui" min="0.7" max="1.5" value="1.0" step="0.05" />
+      </label>
+      <label class="sp-row">
+        <span class="sp-label">内容宽度 <span class="sp-val" id="sp-val-width">760px</span></span>
+        <input type="range" id="sp-width" min="520" max="1100" value="760" step="10" />
+      </label>
+      <label class="sp-row">
+        <span class="sp-label">字体方案</span>
+        <select id="sp-font" style="font-family:var(--fm);font-size:calc(.72rem * var(--fs-ui));color:var(--tx);background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:.3rem .45rem;cursor:pointer;outline:none;width:100%">
+          <option value="serif">衬线 · Lora + Source Serif 4</option>
+          <option value="sans">无衬线 · DM Sans + Inter</option>
+          <option value="mono">等宽优先 · Space Mono + Atkinson</option>
+          <option value="cn">中文优化 · Noto Serif SC + Noto Sans SC</option>
+        </select>
+      </label>
+      <button class="sp-reset" id="sp-reset">恢复默认</button>
+    </div>
+  </div>
+
+  <script is:inline>
+    // Settings panel
+    var defaults = { base: 15, body: 1, ui: 1, width: 760 };
+    function loadSetting(key, def) { var v = localStorage.getItem('mz_' + key); return v !== null ? parseFloat(v) : def; }
+
+    function applyBase(size) {
+      document.documentElement.style.fontSize = size + 'px';
+      var el = document.getElementById('sp-base'); if (el) el.value = size;
+      var vl = document.getElementById('sp-val-base'); if (vl) vl.textContent = size + 'px';
+    }
+    function applyBody(mult) {
+      document.documentElement.style.setProperty('--fs-body', mult);
+      var el = document.getElementById('sp-body'); if (el) el.value = mult;
+      var vl = document.getElementById('sp-val-body'); if (vl) vl.textContent = mult.toFixed(2) + 'x';
+    }
+    function applyUI(mult) {
+      document.documentElement.style.setProperty('--fs-ui', mult);
+      var el = document.getElementById('sp-ui'); if (el) el.value = mult;
+      var vl = document.getElementById('sp-val-ui'); if (vl) vl.textContent = mult.toFixed(2) + 'x';
+    }
+    function applyWidth(w) {
+      document.documentElement.style.setProperty('--content-width', w + 'px');
+      var el = document.getElementById('sp-width'); if (el) el.value = w;
+      var vl = document.getElementById('sp-val-width'); if (vl) vl.textContent = w + 'px';
+    }
+
+    applyBase(loadSetting('base', defaults.base));
+    applyBody(loadSetting('body', defaults.body));
+    applyUI(loadSetting('ui', defaults.ui));
+    applyWidth(loadSetting('width', defaults.width));
+
+    // Font presets
+    var fontPresets = {
+      serif: { fh: "'Lora',Georgia,serif",          fb: "'Source Serif 4',Georgia,serif", fm: "'JetBrains Mono',monospace" },
+      sans:  { fh: "'DM Sans',system-ui,sans-serif", fb: "'Inter',system-ui,sans-serif",  fm: "'JetBrains Mono',monospace" },
+      mono:  { fh: "'Space Mono',monospace",         fb: "'Atkinson Hyperlegible',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
+      cn:    { fh: "'Noto Serif SC',Georgia,serif",  fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" }
+    };
+    function applyFont(key) {
+      var p = fontPresets[key] || fontPresets.serif;
+      document.documentElement.style.setProperty('--fh', p.fh);
+      document.documentElement.style.setProperty('--fb', p.fb);
+      document.documentElement.style.setProperty('--fm', p.fm);
+      var el = document.getElementById('sp-font'); if (el) el.value = key;
+    }
+    applyFont(localStorage.getItem('mz_font') || 'serif');
+
+    document.getElementById('sp-font').addEventListener('change', function() {
+      applyFont(this.value);
+      localStorage.setItem('mz_font', this.value);
+    });
+
+    document.getElementById('btn-settings').addEventListener('click', function() {
+      document.getElementById('settings-panel').classList.toggle('open');
+    });
+    document.getElementById('sp-close').addEventListener('click', function() {
+      document.getElementById('settings-panel').classList.remove('open');
+    });
+    document.addEventListener('click', function(e) {
+      var panel = document.getElementById('settings-panel');
+      var btn = document.getElementById('btn-settings');
+      if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== btn) {
+        panel.classList.remove('open');
+      }
+    });
+
+    ['base','body','ui','width'].forEach(function(k) {
+      var cap = k.charAt(0).toUpperCase() + k.slice(1);
+      document.getElementById('sp-' + k).addEventListener('input', function() {
+        var v = parseFloat(this.value);
+        window['apply' + cap](v);
+        localStorage.setItem('mz_' + k, v);
+      });
+    });
+
+    document.getElementById('sp-reset').addEventListener('click', function() {
+      applyBase(defaults.base); localStorage.setItem('mz_base', defaults.base);
+      applyBody(defaults.body); localStorage.setItem('mz_body', defaults.body);
+      applyUI(defaults.ui); localStorage.setItem('mz_ui', defaults.ui);
+      applyWidth(defaults.width); localStorage.setItem('mz_width', defaults.width);
+      applyFont('serif'); localStorage.setItem('mz_font', 'serif');
+    });
+
+    // Theme toggle
+    document.getElementById('btn-theme').addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('mz_theme', next);
+    });
+
+    // Search
+    var searchIdx = [];
+    (async function(){ try { var r = await fetch('/search-index.json'); searchIdx = await r.json(); } catch(e){} })();
+
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function updateResults(q){
+      var container = document.getElementById('search-results');
+      var ql = q.toLowerCase().trim();
+      if(!ql){ container.innerHTML = '<div class="s-empty">输入关键词开始搜索</div>'; return; }
+      var results = searchIdx.filter(function(i){ return i.title.toLowerCase().includes(ql) || i.excerpt.toLowerCase().includes(ql) || i.path.toLowerCase().includes(ql); }).slice(0,10);
+      if(!results.length){ container.innerHTML = '<div class="s-empty">没有找到「'+esc(q)+'」</div>'; return; }
+      container.innerHTML = results.map(function(r){
+        return '<a class="sr" href="'+r.path+'"><div class="sr-name">'+esc(r.title)+'</div><div class="sr-path">'+esc(r.path)+'</div><div class="sr-exc">'+esc(r.excerpt||'')+'</div></a>';
+      }).join('');
+    }
+
+    document.getElementById('search-in').addEventListener('input', function(){ updateResults(this.value); });
+    document.getElementById('btn-search').addEventListener('click', function(){
+      var ov = document.getElementById('search-ov');
+      ov.classList.add('open');
+      document.getElementById('search-in').value = '';
+      document.getElementById('search-in').focus();
+      updateResults('');
+    });
+    document.getElementById('search-ov').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+    document.addEventListener('keydown', function(e){
+      if((e.metaKey||e.ctrlKey)&&e.key==='k'){ e.preventDefault(); document.getElementById('btn-search').click(); }
+      if(e.key==='Escape') document.getElementById('search-ov').classList.remove('open');
+    });
+
+    // Reading progress
+    (function(){
+      var bar = document.getElementById('pbar');
+      if(!bar) return;
+      window.addEventListener('scroll', function(){
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.width = h>0 ? Math.min(100,(window.scrollY/h)*100)+'%' : '0';
+      },{passive:true});
+      // Active TOC
+      window.addEventListener('scroll', function(){
+        var cur = '';
+        document.querySelectorAll('.toc-li').forEach(function(li){
+          var id = li.getAttribute('data-id');
+          if(!id) return;
+          var el = document.getElementById(id);
+          if(el && el.getBoundingClientRect().top < 120) cur = id;
+        });
+        document.querySelectorAll('.toc-li').forEach(function(li){ li.classList.toggle('on', li.getAttribute('data-id')===cur); });
+        document.querySelectorAll('.docs-sb-link').forEach(function(link){
+          link.classList.toggle('on', link.getAttribute('data-id')===cur);
+        });
+      },{passive:true});
+    })();
+  </script>
+</body>
+</html>

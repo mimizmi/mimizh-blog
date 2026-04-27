@@ -1,0 +1,156 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SidebarTree from '../../components/SidebarTree.astro';
+import { buildWikiTree, findNode, getAncestors, getFolderColor } from '../../utils/tree';
+import type { TreeNode } from '../../utils/tree';
+
+export async function getStaticPaths() {
+  const tree = await buildWikiTree();
+  const paths: { params: { slug: string } }[] = [];
+  function walk(nodes: TreeNode[], parent: string[]) {
+    for (const node of nodes) {
+      const segs = [...parent, node.name];
+      paths.push({ params: { slug: segs.join('/') } });
+      if (node.type === 'folder' && node.children) walk(node.children, segs);
+    }
+  }
+  walk(tree, []);
+  return paths;
+}
+
+const { slug: slugParam } = Astro.params;
+const segments = (slugParam || '').split('/').filter(Boolean);
+
+const tree = await buildWikiTree();
+const node = findNode(tree, segments);
+if (!node) return Astro.redirect('/wiki/');
+
+const ancestors = getAncestors(tree, segments);
+const isNote = node.type === 'note';
+
+const breadcrumbs = [
+  { label: 'Wiki', href: '/wiki/' },
+  ...ancestors.map((a, i) => ({
+    label: a.type === 'folder' ? a.name : (a.wikiEntry?.data.title || ''),
+    href: `/wiki/${segments.slice(0, i + 1).join('/')}/`,
+  })),
+];
+
+// Page title
+const pageTitle = isNote ? (node.wikiEntry?.data.title || '') : node.name;
+
+// For folder: collect children
+let folderChildren: TreeNode[] = [];
+if (!isNote && node.children) folderChildren = node.children;
+
+// For note: render content
+let Content: any;
+let entry: any = null;
+if (isNote && node.wikiEntry) {
+  entry = node.wikiEntry;
+  const rendered = await node.wikiEntry.render();
+  Content = rendered.Content;
+}
+
+const secEntries = ancestors.length > 0
+  ? (ancestors[ancestors.length - 2]?.children || []).filter(c => c.type === 'note' && c.name !== node?.name)
+  : [];
+---
+
+<BaseLayout title={`${pageTitle} · Wiki`} activeNav="wiki" breadcrumbs={breadcrumbs}>
+  <div class="main">
+    <div class="sb">
+      <div style="padding:.25rem 0 1rem">
+        <div class="tree-sec">Wiki</div>
+        <SidebarTree nodes={tree} ancestors={ancestors} currentNode={node} basePath="/wiki/" />
+      </div>
+    </div>
+
+    {!isNote ? (
+      <div class="main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+        <div class="page fu">
+          <div class="ph">
+            <div class="pt" style="display:flex;align-items:center;gap:.5rem">
+              <span style={`width:8px;height:8px;border-radius:50%;background:${getFolderColor(node.segments.join('/'))};display:inline-block`}></span>
+              {node.name}
+            </div>
+            <div class="pd">{node.count} 条笔记</div>
+          </div>
+
+          {folderChildren.some(c => c.type === 'folder') && (
+            <div class="wiki-grid">
+              {folderChildren.filter(c => c.type === 'folder').map(f => (
+                <a class="wiki-sc" href={`/wiki/${f.segments.join('/')}/`}>
+                  <div class="wiki-sc-dot" style={`background:${getFolderColor(f.segments.join('/'))}`}></div>
+                  <div class="wiki-sc-name">{f.name}</div>
+                  <div class="wiki-sc-desc">{f.count} 条笔记</div>
+                </a>
+              ))}
+            </div>
+          )}
+
+          <div class="fl">
+            {folderChildren.filter(c => c.type === 'note').map(n => (
+              <a class="fr" href={`/wiki/${n.segments.join('/')}/`}>
+                <div>
+                  <div class="fn" style="display:flex;align-items:center;gap:.45rem">
+                    {n.wikiEntry?.data.title || n.name}
+                    {n.pdf && <span class="pdf-badge">PDF</span>}
+                  </div>
+                  <div class="fe">{n.wikiEntry?.data.description || ''}</div>
+                </div>
+                <div class="fm-col"><div class="fd">{n.resolvedDate || n.wikiEntry?.data.date || ''}</div></div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div style="flex:1;overflow-y:auto;height:calc(100vh - var(--nav-h))">
+        <div class="doc-layout">
+          <div class="doc-main fu">
+            <a class="back" href={`/wiki/${node.segments.slice(0, -1).join('/')}/`}>
+              ← {ancestors.length > 1 ? ancestors[ancestors.length - 2]?.name : 'Wiki'}
+            </a>
+            <span class="doc-cat" style={`color:${getFolderColor(node.segments.join('/'))};font-family:var(--fm);font-size:.67rem;letter-spacing:.08em`}>
+              Wiki / {node.segments.slice(0, -1).join(' / ') || ''}
+            </span>
+            <h1 class="doc-title">{entry?.data.title}</h1>
+            <div class="doc-sub">{entry?.data.description}</div>
+            <div class="doc-meta" style="font-family:var(--fm)">
+              <span>{node.resolvedDate || entry?.data.date}</span>
+              {node.pdf && <><span>·</span><span style="color:var(--paper)">PDF 附件</span></>}
+            </div>
+            {node.pdf && (
+              <div class="pdf-rd">
+                <div class="pdf-hd">
+                  <span class="pdf-nm"><span class="pdf-dot"></span>PDF · {entry?.data.title}</span>
+                  <div class="pdf-acts">
+                    <button class="pdf-ab" onclick="var f=this.closest('.pdf-rd').querySelector('.pdf-fr');f.style.height=f.style.height==='660px'?'450px':'660px';this.textContent=f.style.height==='660px'?'收起':'展开';">展开</button>
+                    <a class="pdf-ab" href={node.pdf} target="_blank" rel="noreferrer">新标签 ↗</a>
+                  </div>
+                </div>
+                <iframe class="pdf-fr" src={node.pdf} style="height:450px" title={entry?.data.title}></iframe>
+              </div>
+            )}
+            <div class="doc-body">
+              {Content && <Content />}
+            </div>
+          </div>
+          {secEntries.length > 0 && (
+            <div class="doc-toc-col">
+              <div class="doc-toc-lbl">本节其他</div>
+              {secEntries.map(e => (
+                <div style="font-size:.74rem;color:var(--tx3);padding:.24rem 0 .24rem .68rem;border-left:1.5px solid var(--bd);cursor:pointer;transition:all .15s;line-height:1.35;margin-bottom:.04rem"
+                  onmouseenter="this.style.color='var(--tx2)'" onmouseleave="this.style.color='var(--tx3)'"
+                  onclick={`location.href='/wiki/${e.segments.join('/')}/'`}>
+                  {e.wikiEntry?.data.title}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+</BaseLayout>

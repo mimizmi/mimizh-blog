@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { buildWikiTree, flattenNodes, getFolderColor } from '../../utils/tree';
+
+const tree = await buildWikiTree();
+const topFolders = tree.filter(n => n.type === 'folder');
+const allEntries = flattenNodes(tree);
+const recent = [...allEntries].sort((a, b) =>
+  (b.wikiEntry?.data.date || '').localeCompare(a.wikiEntry?.data.date || '')
+).slice(0, 6);
+---
+
+<BaseLayout title="知识库" activeNav="wiki">
+  <div class="main main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+    <div class="page fu">
+      <div class="ph">
+        <div class="pt">知识库</div>
+        <div class="pd">持续整理的笔记，含论文 PDF 内嵌阅读</div>
+      </div>
+      <div class="wiki-grid">
+        {topFolders.map(n => {
+          const hasPdf = n.children?.some(c => c.pdf);
+          return (
+            <a class="wiki-sc" href={`/wiki/${n.segments.join('/')}/`}>
+              <div class="wiki-sc-dot" style={`background:${getFolderColor(n.segments.join('/'))}`}></div>
+              <div class="wiki-sc-name">{n.name}</div>
+              <div class="wiki-sc-desc">{n.count} 条笔记</div>
+              <div class="wiki-sc-meta">
+                {hasPdf ? '含 PDF' : ''}
+                {n.children?.some(c => c.type === 'folder') ? (hasPdf ? ' · 含子分类' : '含子分类') : ''}
+              </div>
+            </a>
+          );
+        })}
+      </div>
+      {recent.length > 0 && (
+        <>
+          <div style="font-family:var(--fm);font-size:.68rem;color:var(--tx3);letter-spacing:.08em;margin-bottom:.38rem">最近更新</div>
+          <div class="fl">
+            {recent.map(n => (
+              <a class="fr" href={`/wiki/${n.segments.join('/')}/`}>
+                <div>
+                  <div class="fn" style="display:flex;align-items:center;gap:.45rem">
+                    {n.wikiEntry?.data.title || n.name}
+                    {n.pdf && <span class="pdf-badge">PDF</span>}
+                  </div>
+                  <div class="fe">{n.wikiEntry?.data.description || ''}</div>
+                </div>
+                <div class="fm-col"><div class="fd">{n.resolvedDate || n.wikiEntry?.data.date || ''}</div></div>
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+</BaseLayout>

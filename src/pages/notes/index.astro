@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { buildNoteTree, flattenNodes, getFolderColor } from '../../utils/tree';
+
+const tree = await buildNoteTree();
+const allNotesFlat = flattenNodes(tree);
+const recent = [...allNotesFlat].sort((a, b) =>
+  (b.note?.data.date || '').localeCompare(a.note?.data.date || '')
+).slice(0, 6);
+
+const topFolders = tree.filter(n => n.type === 'folder');
+---
+
+<BaseLayout title="笔记" activeNav="notes">
+  <div class="main main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+    <div class="page fu">
+      <div class="ph">
+        <div class="pt">笔记</div>
+        <div class="pd">技术探索、读书思考、生活随笔</div>
+      </div>
+      <div class="cat-grid">
+        {topFolders.map(n => (
+          <a class="cat-c" href={`/notes/${n.segments.join('/')}/`}>
+            <div class="cat-c-dot" style={`background:${getFolderColor(n.segments.join('/'))}`}></div>
+            <div class="cat-c-name">{n.name}</div>
+            <div class="cat-c-sub">{n.count} 篇笔记</div>
+            <div class="cat-c-meta">
+              {n.children?.some(c => c.type === 'folder') ? '含子文件夹' : ''}
+            </div>
+          </a>
+        ))}
+      </div>
+      <div style="font-family:var(--fm);font-size:.68rem;color:var(--tx3);letter-spacing:.08em;margin-bottom:.38rem">最近更新</div>
+      <div class="fl">
+        {recent.map(n => {
+          const href = `/notes/${n.segments.join('/')}/`;
+          return (
+            <a class="fr" href={href}>
+              <div>
+                <div class="fn">{n.note?.data.title || n.name}</div>
+                <div class="fe">{n.note?.data.description || ''}</div>
+              </div>
+              <div class="fm-col"><div class="fd">{n.resolvedDate || n.note?.data.date || ''}</div></div>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

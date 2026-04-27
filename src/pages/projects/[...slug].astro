@@ -1,0 +1,103 @@
+---
+import { slug } from 'github-slugger';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { buildProjectTree, findNode, getAncestors, STATUS_COLORS } from '../../utils/tree';
+import type { TreeNode } from '../../utils/tree';
+
+export async function getStaticPaths() {
+  const tree = await buildProjectTree();
+  const paths: { params: { slug: string } }[] = [];
+  function walk(nodes: TreeNode[], parent: string[]) {
+    for (const node of nodes) {
+      if (node.type === 'note') {
+        paths.push({ params: { slug: [...parent, node.name].join('/') } });
+      }
+      if (node.type === 'folder' && node.children) walk(node.children, [...parent, node.name]);
+    }
+  }
+  walk(tree, []);
+  return paths;
+}
+
+const { slug: slugParam } = Astro.params;
+const segments = (slugParam || '').split('/').filter(Boolean);
+
+const tree = await buildProjectTree();
+const node = findNode(tree, segments);
+if (!node || node.type !== 'note' || !node.projectEntry) return Astro.redirect('/projects/');
+
+const ancestors = getAncestors(tree, segments);
+const project = node.projectEntry;
+const { Content } = await project.render();
+
+const breadcrumbs = [
+  { label: '项目', href: '/projects/' },
+  ...ancestors.slice(0, -1).map(a => ({
+    label: a.name, href: `/projects/${a.segments.join('/')}/`,
+  })),
+  { label: project.data.title || node.name, href: `/projects/${segments.join('/')}/` },
+];
+
+// Build docs sidebar from headings in body
+const bodyText = project.body || '';
+const sections: { id: string; label: string }[] = [];
+const headingRe = /^##\s+(.+)$/gm;
+let match;
+while ((match = headingRe.exec(bodyText)) !== null) {
+  sections.push({ id: slug(match[1]), label: match[1] });
+}
+
+if (sections.length === 0 && bodyText.trim()) {
+  sections.push({ id: slug('概述'), label: '概述' });
+}
+---
+
+<BaseLayout title={`${project.data.title} · 项目`} activeNav="projects" breadcrumbs={breadcrumbs}>
+  <div class="main">
+    <div class="docs-sb">
+      <div class="docs-sb-logo">
+        <div class="docs-sb-icon">{node.icon || '◆'}</div>
+        <div class="docs-sb-name">{project.data.title}</div>
+        <div class="docs-sb-tag">{node.status}</div>
+      </div>
+      <div class="docs-sb-sec">文档</div>
+      {sections.map((s, i) => (
+        <div class={`docs-sb-link${i === 0 ? ' on' : ''}`} data-id={s.id}
+          onclick={`document.getElementById('${s.id}').scrollIntoView({behavior:'smooth',block:'start'})`}>
+          {s.label}
+        </div>
+      ))}
+      {node.tags && node.tags.length > 0 && (
+        <>
+          <div class="docs-sb-sec">标签</div>
+          <div style="padding:.18rem 1rem .5rem;display:flex;gap:.28rem;flex-wrap:wrap">
+            {node.tags.map(t => <span class="proj-tag">{t}</span>)}
+          </div>
+        </>
+      )}
+    </div>
+    <div style="flex:1;overflow-y:auto;height:calc(100vh - var(--nav-h))">
+      <div class="docs-main fu">
+        <a class="back" href="/projects/">← 返回项目</a>
+        <span class="doc-cat" style={`color:${STATUS_COLORS[node.status || ''] || 'var(--tx3)'}`}>{node.status}</span>
+        <h1 class="doc-title">{project.data.title}</h1>
+        {node.tagline && <div class="doc-sub">{node.tagline}</div>}
+        {node.tags && <div class="doc-meta"><span>{node.tags.join(' · ')}</span></div>}
+        <div class="doc-body">
+          <Content />
+        </div>
+      </div>
+    </div>
+    {sections.length > 0 && (
+      <div class="docs-toc">
+        <div class="doc-toc-lbl">文档目录</div>
+        {sections.map(s => (
+          <div class="docs-sb-link" data-id={s.id} style="cursor:pointer"
+            onclick={`document.getElementById('${s.id}').scrollIntoView({behavior:'smooth',block:'start'})`}>
+            {s.label}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>
