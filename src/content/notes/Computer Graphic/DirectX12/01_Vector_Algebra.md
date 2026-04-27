@@ -106,12 +106,15 @@ $$
 $$
 \mathbf {w} _ {1} = \mathbf {v} _ {1} - \operatorname {p r o j} _ {\mathbf {w} _ {0}} (\mathbf {v} _ {1})
 $$
+
 $$
 \mathbf {w} _ {2} = \mathbf {v} _ {2} - \operatorname {p r o j} _ {\mathbf {w} _ {0}} (\mathbf {v} _ {2}) - \operatorname {p r o j} _ {\mathbf {w} _ {1}} (\mathbf {v} _ {2})
-$$![](assets/01_Vector_Algebra/file-20260423220743820.png)
+$$
+
+![](assets/01_Vector_Algebra/file-20260423220743820.png)
 
 完成正交操作后，再将所有$\mathbf { w } _ { n }$向量进行归一化即可
-$\begin{array} { l } { { \displaystyle \mathrm { F o r } 1 \leq i \leq n - 1 , \mathrm { S e t } { \bf w } _ { i } = { \bf v } _ { i } - \sum _ { j = 0 } ^ { i - 1 } \mathrm { p r o j } _ { { \bf w } _ { j } } \left( { \bf v } _ { i } \right) } } \\ { { \displaystyle \mathrm { N o r m a l i z a t i o n } \mathrm { S t e p } } \colon \mathrm { S e t } { \bf w } _ { i } = \frac { { \bf w } _ { i } } { \displaystyle \| { \bf w } _ { i } \| } } \end{array}$ $1 \leq i \leq n - 1 .$
+$$ \begin{array} { l } { { \displaystyle \mathrm { F o r } 1 \leq i \leq n - 1 , \mathrm { S e t } { \bf w } _ { i } = { \bf v } _ { i } - \sum _ { j = 0 } ^ { i - 1 } \mathrm { p r o j } _ { { \bf w } _ { j } } \left( { \bf v } _ { i } \right) } } \\ { { \displaystyle \mathrm { N o r m a l i z a t i o n } \mathrm { S t e p } } \colon \mathrm { S e t } { \bf w } _ { i } = \frac { { \bf w } _ { i } } { \displaystyle \| { \bf w } _ { i } \| } } \end{array}$ $1 \leq i \leq n - 1 .$$
 
 ## Cross Product(叉积)
 
