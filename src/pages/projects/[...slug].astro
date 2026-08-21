@@ -52,9 +52,9 @@ if (sections.length === 0 && bodyText.trim()) {
 }
 ---
 
-<BaseLayout title={`${project.data.title} · 项目`} activeNav="projects" breadcrumbs={breadcrumbs}>
+<BaseLayout title={`${project.data.title} · 项目`} activeNav="projects" breadcrumbs={breadcrumbs} accent={STATUS_COLORS[node.status || ""] || "var(--project)"} ogType="article" description={node.tagline || `${project.data.title} — 项目文档`}>
   <div class="main">
-    <div class="docs-sb">
+    <div class="docs-sb" data-pagefind-ignore>
       <div class="docs-sb-logo">
         <div class="docs-sb-icon">{node.icon || '◆'}</div>
         <div class="docs-sb-name">{project.data.title}</div>
@@ -62,10 +62,9 @@ if (sections.length === 0 && bodyText.trim()) {
       </div>
       <div class="docs-sb-sec">文档</div>
       {sections.map((s, i) => (
-        <div class={`docs-sb-link${i === 0 ? ' on' : ''}`} data-id={s.id}
-          onclick={`document.getElementById('${s.id}').scrollIntoView({behavior:'smooth',block:'start'})`}>
+        <a class={`docs-sb-link${i === 0 ? ' on' : ''}`} data-id={s.id} href={`#${s.id}`}>
           {s.label}
-        </div>
+        </a>
       ))}
       {node.tags && node.tags.length > 0 && (
         <>
@@ -76,9 +75,9 @@ if (sections.length === 0 && bodyText.trim()) {
         </>
       )}
     </div>
-    <div style="flex:1;overflow-y:auto;height:calc(100vh - var(--nav-h))">
-      <div class="docs-main fu">
-        <a class="back" href="/projects/">← 返回项目</a>
+    <div class="main-col">
+      <div class="docs-main fu" data-pagefind-body>
+        <a class="back" data-pagefind-ignore href="/projects/">← 返回项目</a>
         <span class="doc-cat" style={`color:${STATUS_COLORS[node.status || ''] || 'var(--tx3)'}`}>{node.status}</span>
         <h1 class="doc-title">{project.data.title}</h1>
         {node.tagline && <div class="doc-sub">{node.tagline}</div>}
@@ -89,13 +88,12 @@ if (sections.length === 0 && bodyText.trim()) {
       </div>
     </div>
     {sections.length > 0 && (
-      <div class="docs-toc">
+      <div class="docs-toc" data-pagefind-ignore>
         <div class="doc-toc-lbl">文档目录</div>
         {sections.map(s => (
-          <div class="docs-sb-link" data-id={s.id} style="cursor:pointer"
-            onclick={`document.getElementById('${s.id}').scrollIntoView({behavior:'smooth',block:'start'})`}>
+          <a class="docs-sb-link" data-id={s.id} href={`#${s.id}`}>
             {s.label}
-          </div>
+          </a>
         ))}
       </div>
     )}

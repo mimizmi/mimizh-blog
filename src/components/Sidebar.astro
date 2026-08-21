@@ -1,0 +1,212 @@
+---
+import SidebarTree from './SidebarTree.astro';
+import type { TreeNode } from '../utils/tree';
+
+export interface Props {
+  nodes: TreeNode[];
+  ancestors: TreeNode[];
+  currentNode: TreeNode | null;
+  basePath: string;
+  label: string;
+}
+
+const { nodes, ancestors, currentNode, basePath, label } = Astro.props;
+// persist key 按板块区分，避免 /notes/ 与 /wiki/ 的树在导航时互相串用
+const persistKey = `sb-${basePath.replace(/\//g, '')}`;
+---
+
+<div class="sb-scrim" id="sb-scrim" transition:persist={`${persistKey}-scrim`}></div>
+
+<aside class="sb" id="sb" data-pagefind-ignore data-base={basePath} transition:persist={persistKey}>
+  <div class="sb-head">
+    <div class="tree-sec">
+      <span>{label}</span>
+      <span class="tree-tools">
+        <button class="tree-tool" type="button" data-tree-act="expand" title="展开全部">展开</button>
+        <button class="tree-tool" type="button" data-tree-act="collapse" title="折叠全部">折叠</button>
+      </span>
+    </div>
+    <input
+      class="tree-filter"
+      id="tree-filter"
+      type="text"
+      placeholder="过滤目录…"
+      aria-label="过滤目录"
+      autocomplete="off"
+      spellcheck="false"
+    />
+  </div>
+
+  <div class="tree-body">
+    <SidebarTree
+      nodes={nodes}
+      ancestors={ancestors}
+      currentNode={currentNode}
+      basePath={basePath}
+    />
+    <div class="tree-empty">没有匹配的条目</div>
+  </div>
+</aside>
+
+<script is:inline>
+(function () {
+  function closeDrawer() {
+    var sb = document.getElementById('sb');
+    var sc = document.getElementById('sb-scrim');
+    if (sb) sb.classList.remove('open');
+    if (sc) sc.classList.remove('open');
+  }
+
+  function initSidebar() {
+    var sb = document.getElementById('sb');
+    if (!sb || sb.dataset.bound) return;
+    sb.dataset.bound = '1';
+
+    var LS = 'mz_tree' + (sb.dataset.base || '/');
+    function load() { try { return JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) { return []; } }
+    function save() { try { localStorage.setItem(LS, JSON.stringify(open)); } catch (e) {} }
+
+    var open = load();
+    var folders = sb.querySelectorAll('.tr-item[data-kind="folder"]');
+
+    function syncArrow(item) {
+      var arr = item.querySelector(':scope > .tr > .tr-arr');
+      if (arr) arr.setAttribute('aria-expanded', item.classList.contains('open') ? 'true' : 'false');
+    }
+    function setOpen(item, val) {
+      item.classList.toggle('open', val);
+      syncArrow(item);
+      var i = open.indexOf(item.dataset.key);
+      if (val && i < 0) open.push(item.dataset.key);
+      if (!val && i >= 0) open.splice(i, 1);
+      save();
+    }
+
+    // 恢复展开状态 = localStorage ∪ 服务端渲染的当前路径分支
+    folders.forEach(function (it) {
+      if (open.indexOf(it.dataset.key) >= 0) it.classList.add('open');
+      else if (it.classList.contains('open')) open.push(it.dataset.key);
+      syncArrow(it);
+    });
+    save();
+
+    // 点箭头 = 就地展开/折叠（不跳转）；点标题 = 跳转并顺手展开
+    sb.addEventListener('click', function (e) {
+      var arr = e.target.closest('.tr-arr');
+      if (arr) {
+        e.preventDefault();
+        var it = arr.closest('.tr-item');
+        setOpen(it, !it.classList.contains('open'));
+        return;
+      }
+      var link = e.target.closest('.tr-link');
+      if (link) {
+        var it2 = link.closest('.tr-item');
+        if (it2 && it2.dataset.kind === 'folder') setOpen(it2, true);
+        if (window.innerWidth <= 860) closeDrawer();
+      }
+    });
+
+    // 键盘：← 折叠 / → 展开
+    sb.addEventListener('keydown', function (e) {
+      var it = e.target.closest && e.target.closest('.tr-item');
+      if (!it || it.dataset.kind !== 'folder') return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); setOpen(it, true); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setOpen(it, false); }
+    });
+
+    sb.querySelectorAll('[data-tree-act]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var want = b.dataset.treeAct === 'expand';
+        folders.forEach(function (it) { setOpen(it, want); });
+      });
+    });
+
+    // ── 过滤 ──
+    var fi = document.getElementById('tree-filter');
+    function resetLabel(l) { l.textContent = l.dataset.raw || l.textContent; }
+    function mark(l, q) {
+      var raw = l.dataset.raw || l.textContent;
+      var i = raw.toLowerCase().indexOf(q);
+      if (i < 0) { resetLabel(l); return; }
+      l.textContent = '';
+      l.appendChild(document.createTextNode(raw.slice(0, i)));
+      var m = document.createElement('span');
+      m.className = 'tr-mark';
+      m.textContent = raw.slice(i, i + q.length);
+      l.appendChild(m);
+      l.appendChild(document.createTextNode(raw.slice(i + q.length)));
+    }
+    function walk(item, q) {
+      var lbl = item.querySelector(':scope > .tr .tr-lbl');
+      var self = (lbl.dataset.raw || '').toLowerCase().indexOf(q) >= 0;
+      var kidHit = false;
+      item.querySelectorAll(':scope > .tr-kids > div > .tr-item').forEach(function (k) {
+        if (walk(k, q)) kidHit = true;
+      });
+      var hit = self || kidHit;
+      item.classList.toggle('miss', !hit);
+      if (self) mark(lbl, q); else resetLabel(lbl);
+      return hit;
+    }
+    if (fi) {
+      fi.addEventListener('input', function () {
+        var q = this.value.trim().toLowerCase();
+        if (!q) {
+          sb.classList.remove('filtering', 'no-hit');
+          sb.querySelectorAll('.miss').forEach(function (x) { x.classList.remove('miss'); });
+          sb.querySelectorAll('.tr-lbl').forEach(resetLabel);
+          return;
+        }
+        sb.classList.add('filtering');
+        var any = false;
+        sb.querySelectorAll('.tree-body > .tr-item').forEach(function (it) {
+          if (walk(it, q)) any = true;
+        });
+        sb.classList.toggle('no-hit', !any);
+      });
+      fi.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { this.value = ''; this.dispatchEvent(new Event('input')); }
+      });
+    }
+  }
+
+  // 导航后按当前地址重新标记高亮，并展开其所在分支
+  function syncActive() {
+    var sb = document.getElementById('sb');
+    if (!sb) return;
+    var here = location.pathname.replace(/\/+$/, '');
+    var target = null;
+    sb.querySelectorAll('.tr').forEach(function (r) {
+      var on = (r.dataset.href || '').replace(/\/+$/, '') === here;
+      r.classList.toggle('on', on);
+      if (on) target = r;
+    });
+    if (!target) return;
+    var p = target.parentElement;
+    while (p && p !== sb) {
+      if (p.classList.contains('tr-item')) {
+        p.classList.add('open');
+        var arr = p.querySelector(':scope > .tr > .tr-arr');
+        if (arr) arr.setAttribute('aria-expanded', 'true');
+      }
+      p = p.parentElement;
+    }
+    // 当前项滚入视野（仅在侧栏内滚动，不影响正文）
+    var top = target.offsetTop - sb.clientHeight / 2;
+    if (top < 0) top = 0;
+    if (Math.abs(sb.scrollTop - top) > sb.clientHeight / 2) sb.scrollTop = top;
+  }
+
+  function run() { initSidebar(); syncActive(); }
+
+  if (!window.__mzSidebarHook) {
+    window.__mzSidebarHook = 1;
+    document.addEventListener('astro:page-load', run);
+    document.addEventListener('click', function (e) {
+      if (e.target === document.getElementById('sb-scrim')) closeDrawer();
+    });
+  }
+  run();
+})();
+</script>

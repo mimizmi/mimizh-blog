@@ -4,15 +4,15 @@ import { buildNoteTree, flattenNodes, getFolderColor } from '../../utils/tree';
 
 const tree = await buildNoteTree();
 const allNotesFlat = flattenNodes(tree);
-const recent = [...allNotesFlat].sort((a, b) =>
+const recent = [...allNotesFlat].filter(n => !n.isDraft).sort((a, b) =>
   (b.note?.data.date || '').localeCompare(a.note?.data.date || '')
 ).slice(0, 6);
 
 const topFolders = tree.filter(n => n.type === 'folder');
 ---
 
-<BaseLayout title="笔记" activeNav="notes">
-  <div class="main main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+<BaseLayout title="笔记" activeNav="notes" description="按学科整理的技术笔记：计算机图形学、数据库、分布式系统、网络与游戏开发。">
+  <div class="main main-col">
     <div class="page fu">
       <div class="ph">
         <div class="pt">笔记</div>
@@ -20,7 +20,7 @@ const topFolders = tree.filter(n => n.type === 'folder');
       </div>
       <div class="cat-grid">
         {topFolders.map(n => (
-          <a class="cat-c" href={`/notes/${n.segments.join('/')}/`}>
+          <a class="cat-c" href={`/notes/${n.segments.join('/')}/`} style={`--cc:${getFolderColor(n.segments.join('/'))}`}>
             <div class="cat-c-dot" style={`background:${getFolderColor(n.segments.join('/'))}`}></div>
             <div class="cat-c-name">{n.name}</div>
             <div class="cat-c-sub">{n.count} 篇笔记</div>

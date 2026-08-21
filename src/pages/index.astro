@@ -8,7 +8,7 @@ const bio = (h.bio as string || '').trim().split('\n').filter((p: string) => p.t
 ---
 
 <BaseLayout title={h.name || 'mimizh'} activeNav="home">
-  <div class="main main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+  <div class="main main-col">
     <div class="home-wrap fu">
       <h1 class="home-name">{h.greeting || `你好，我是 <em>${h.name || 'mimizh'}</em>`}</h1>
       {bio.map((p: string) => <p class="home-p">{p.trim()}</p>)}
