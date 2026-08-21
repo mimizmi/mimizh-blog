@@ -1,8 +1,9 @@
 ---
 import { slug } from 'github-slugger';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import SidebarTree from '../../components/SidebarTree.astro';
+import Sidebar from '../../components/Sidebar.astro';
 import { buildNoteTree, findNode, getAncestors, getFolderColor } from '../../utils/tree';
+import { getBacklinksFor } from '../../utils/backlinks';
 import type { TreeNode } from '../../utils/tree';
 
 export async function getStaticPaths() {
@@ -30,6 +31,7 @@ if (!node) return Astro.redirect('/notes/');
 
 const ancestors = getAncestors(tree, segments);
 const isNote = node.type === 'note';
+const sectionColor = getFolderColor(node.segments.join('/'));
 
 // Breadcrumbs
 const breadcrumbs = [
@@ -52,21 +54,34 @@ if (!isNote && node.children) {
   directNoteCount = node.count;
 }
 
+// 目录只显示纯文本，去掉行内 markdown 记号（slug 仍按原文计算，与正文锚点保持一致）
+function plainText(s: string) {
+  return s
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/\*\*([^*]*)\*\*/g, '$1')
+    .replace(/\*([^*]*)\*/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .trim();
+}
+
 // For note detail: render content
 let Content: any;
 let toc: { id: string; label: string; level: number }[] = [];
 let noteEntry: any = null;
+let backlinks: { url: string; title: string }[] = [];
 
 if (isNote && node.note) {
   noteEntry = node.note;
   const rendered = await node.note.render();
   Content = rendered.Content;
 
+  backlinks = await getBacklinksFor(`/notes/${node.segments.join('/')}/`);
+
   const bodyText = node.note.body || '';
-  const headingRe = /^(#{2,3})\s+(.+)$/gm;
+  const headingRe = /^(#{2,4})\s+(.+)$/gm;
   let match;
   while ((match = headingRe.exec(bodyText)) !== null) {
-    toc.push({ id: slug(match[2]), label: match[2], level: match[1].length });
+    toc.push({ id: slug(match[2]), label: plainText(match[2]), level: match[1].length });
   }
 }
 ---
@@ -75,22 +90,29 @@ if (isNote && node.note) {
   title={`${pageTitle} · 笔记`}
   activeNav="notes"
   breadcrumbs={breadcrumbs}
+  accent={sectionColor}
+  hasSidebar={true}
+  ogType={isNote ? 'article' : 'website'}
+  description={isNote
+    ? (noteEntry?.data.description || `${pageTitle} — ${node.segments.slice(0, -1).join(' / ')} 笔记`)
+    : `${node.name} 目录下的 ${directNoteCount} 篇笔记`}
 >
   <div class="main">
-    <div class="sb">
-      <div style="padding:.25rem 0 1rem">
-        <div class="tree-sec">笔记</div>
-        <SidebarTree nodes={tree} ancestors={ancestors} currentNode={node} basePath="/notes/" />
-      </div>
-    </div>
+    <Sidebar
+      nodes={tree}
+      ancestors={ancestors}
+      currentNode={node}
+      basePath="/notes/"
+      label="笔记"
+    />
 
     {!isNote ? (
       /* ── Folder listing ── */
-      <div class="main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+      <div class="main-col">
         <div class="page fu">
           <div class="ph">
             <div class="pt" style="display:flex;align-items:center;gap:.5rem">
-              <span style={`width:8px;height:8px;border-radius:50%;background:${getFolderColor(node.segments.join('/'))};display:inline-block`}></span>
+              <span style={`width:8px;height:8px;border-radius:50%;background:${sectionColor};display:inline-block`}></span>
               {node.name}
             </div>
             <div class="pd">{directNoteCount} 篇笔记</div>
@@ -100,7 +122,8 @@ if (isNote && node.note) {
           {folderChildren.some(c => c.type === 'folder') && (
             <div class="cat-grid">
               {folderChildren.filter(c => c.type === 'folder').map(f => (
-                <a class="cat-c" href={`/notes/${f.segments.join('/')}/`}>
+                <a class="cat-c" href={`/notes/${f.segments.join('/')}/`}
+                   style={`--cc:${getFolderColor(f.segments.join('/'))}`}>
                   <div class="cat-c-dot" style={`background:${getFolderColor(f.segments.join('/'))}`}></div>
                   <div class="cat-c-name">{f.name}</div>
                   <div class="cat-c-sub">{f.count} 篇笔记</div>
@@ -136,12 +159,12 @@ if (isNote && node.note) {
       </div>
     ) : (
       /* ── Note detail ── */
-      <div style="flex:1;overflow-y:auto;height:calc(100vh - var(--nav-h))">
+      <div class="main-col">
         <div class="doc-layout">
-          <div class="doc-main fu">
-            <a class="back" href={`/notes/${node.segments.slice(0, -1).join('/')}/`}>← 返回</a>
+          <div class="doc-main fu" data-pagefind-body>
+            <a class="back" data-pagefind-ignore href={`/notes/${node.segments.slice(0, -1).join('/')}/`}>← 返回</a>
             <a class="doc-cat" href={`/notes/${node.segments.slice(0, -1).join('/')}/`}
-              style={`color:${getFolderColor(node.segments.join('/'))}`}>
+              style={`color:${sectionColor}`}>
               {node.segments.slice(0, -1).join(' / ') || '笔记'}
             </a>
             <h1 class="doc-title">{noteEntry?.data.title}</h1>
@@ -151,26 +174,36 @@ if (isNote && node.note) {
               {(node.readingTime || noteEntry?.data.reading_time) && <><span>·</span><span>{node.readingTime || noteEntry?.data.reading_time}</span></>}
             </div>
             {node.tags && node.tags.length > 0 && (
-              <div style="display:flex;gap:.28rem;flex-wrap:wrap;margin-top:-.5rem;margin-bottom:1rem">
+              <div style="display:flex;gap:.28rem;flex-wrap:wrap;margin-top:.6rem">
                 {node.tags.map(t => <span class="proj-tag">{t}</span>)}
               </div>
             )}
             <div class="doc-body">
               {Content && <Content />}
             </div>
+
+            {backlinks.length > 0 && (
+              <section class="backlinks" data-pagefind-ignore aria-label="反向链接">
+                <div class="backlinks-lbl">被这些笔记引用</div>
+                <ul class="backlinks-list">
+                  {backlinks.map(b => (
+                    <li><a href={b.url}>{b.title}</a></li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
           {toc.length > 0 && (
-            <div class="doc-toc-col">
+            <nav class="doc-toc-col" data-pagefind-ignore aria-label="本页目录">
               <div class="doc-toc-lbl">目录</div>
               <ul class="toc-ul">
                 {toc.map(t => (
-                  <li class={`toc-li${t.level === 3 ? ' h3' : ''}`} data-id={t.id}
-                    onclick={`document.getElementById('${t.id}').scrollIntoView({behavior:'smooth',block:'start'})`}>
-                    {t.label}
+                  <li class={`toc-li${t.level === 3 ? ' h3' : t.level === 4 ? ' h4' : ''}`} data-id={t.id}>
+                    <a href={`#${t.id}`} style="display:block;color:inherit;text-decoration:none">{t.label}</a>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           )}
         </div>
       </div>

@@ -7,6 +7,8 @@ const notes = defineCollection({
     description: z.string().optional(),
     tags: z.array(z.string()).optional(),
     reading_time: z.string().optional(),
+    /** true 时不进入 RSS / 「最近更新」，但页面仍可直接访问 */
+    draft: z.boolean().optional(),
   }),
 });
 
@@ -28,6 +30,7 @@ const wiki = defineCollection({
     description: z.string().optional(),
     tags: z.array(z.string()).optional(),
     pdf: z.string().optional(),
+    draft: z.boolean().optional(),
   }),
 });
 

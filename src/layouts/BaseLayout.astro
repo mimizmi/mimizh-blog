@@ -1,13 +1,35 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+import { SITE } from '../config';
 import '../styles/global.css';
 
 export interface Props {
   title: string;
   activeNav?: 'home' | 'notes' | 'projects' | 'wiki';
   breadcrumbs?: { label: string; href: string }[];
+  /** 当前板块强调色（CSS 颜色值或 var(...)），注入 --sec */
+  accent?: string;
+  /** 是否显示移动端侧栏抽屉开关 */
+  hasSidebar?: boolean;
+  /** 页面描述，用于 <meta description> 与 og:description */
+  description?: string;
+  /** Open Graph 类型 */
+  ogType?: 'website' | 'article';
 }
 
-const { title, activeNav = 'home', breadcrumbs = [] } = Astro.props;
+const {
+  title,
+  activeNav = 'home',
+  breadcrumbs = [],
+  accent,
+  hasSidebar = false,
+  description = SITE.description,
+  ogType = 'website',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? SITE.url).href;
+const fullTitle = `${title} — ${SITE.title}`;
+
 const navItems = [
   { id: 'notes', label: '笔记', href: '/notes/' },
   { id: 'projects', label: '项目', href: '/projects/' },
@@ -20,18 +42,55 @@ const navItems = [
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} — mimizh</title>
+  <title>{fullTitle}</title>
+  <meta name="description" content={description} />
+  <meta name="author" content={SITE.author} />
+  <link rel="canonical" href={canonical} />
+  <link rel="alternate" type="application/rss+xml" title={`${SITE.title} RSS`} href="/rss.xml" />
+  <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+  <meta property="og:type" content={ogType} />
+  <meta property="og:site_name" content={SITE.title} />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={fullTitle} />
+  <meta name="twitter:description" content={description} />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,300;1,8..60,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" />
+  <ClientRouter />
   <script is:inline>
-    (function(){var t=localStorage.getItem('mz_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var f=localStorage.getItem('mz_base')||'15';document.documentElement.style.fontSize=f+'px';var fb=localStorage.getItem('mz_body')||'1';document.documentElement.style.setProperty('--fs-body',fb);var fu=localStorage.getItem('mz_ui')||'1';document.documentElement.style.setProperty('--fs-ui',fu);var fw=localStorage.getItem('mz_width')||'760';document.documentElement.style.setProperty('--content-width',fw+'px');var fp=localStorage.getItem('mz_font')||'serif';var P={serif:{fh:"'Lora',Georgia,serif",fb:"'Source Serif 4',Georgia,serif",fm:"'JetBrains Mono',monospace"},sans:{fh:"'DM Sans',system-ui,sans-serif",fb:"'Inter',system-ui,sans-serif",fm:"'JetBrains Mono',monospace"},mono:{fh:"'Space Mono',monospace",fb:"'Atkinson Hyperlegible',system-ui,sans-serif",fm:"'JetBrains Mono',monospace"},cn:{fh:"'Noto Serif SC',Georgia,serif",fb:"'Noto Sans SC',system-ui,sans-serif",fm:"'JetBrains Mono',monospace"}}[fp];document.documentElement.style.setProperty('--fh',P.fh);document.documentElement.style.setProperty('--fb',P.fb);document.documentElement.style.setProperty('--fm',P.fm);})();
+    // 首屏绘制前应用偏好，避免闪白；换页后由 astro:after-swap 再次应用
+    window.__mzPrefs = function () {
+      var d = document.documentElement, ls = localStorage;
+      d.setAttribute('data-theme', ls.getItem('mz_theme') || 'dark');
+      d.style.fontSize = (ls.getItem('mz_base') || '15') + 'px';
+      d.style.setProperty('--fs-body', ls.getItem('mz_body') || '1');
+      d.style.setProperty('--fs-ui', ls.getItem('mz_ui') || '1');
+      d.style.setProperty('--content-width', (ls.getItem('mz_width') || '760') + 'px');
+      var P = {
+        serif: { fh: "'Lora',Georgia,serif", fb: "'Source Serif 4',Georgia,serif", fm: "'JetBrains Mono',monospace" },
+        sans:  { fh: "'DM Sans',system-ui,sans-serif", fb: "'Inter',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
+        mono:  { fh: "'Space Mono',monospace", fb: "'Atkinson Hyperlegible',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
+        cn:    { fh: "'Noto Serif SC',Georgia,serif", fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" }
+      }[ls.getItem('mz_font') || 'serif'];
+      d.style.setProperty('--fh', P.fh);
+      d.style.setProperty('--fb', P.fb);
+      d.style.setProperty('--fm', P.fm);
+    };
+    window.__mzPrefs();
+    // ClientRouter 换页时会用新文档的 <html> 属性覆盖，这里补回主题/字号
+    document.addEventListener('astro:after-swap', window.__mzPrefs);
   </script>
 </head>
-<body>
+<body style={accent ? `--sec:${accent}` : undefined}>
   <div class="pbar" id="pbar" style="width:0"></div>
   <div class="app">
-    <nav class="nav">
+    <nav class="nav" data-pagefind-ignore>
+      {hasSidebar && <button class="nav-ic nav-menu" id="btn-menu" title="目录" aria-label="打开目录">☰</button>}
       <a class="nav-logo" href="/">mimi<span>zh</span></a>
       {breadcrumbs.length > 0 && (
         <div class="nav-bc">
@@ -53,28 +112,31 @@ const navItems = [
         ))}
       </div>
       <div class="nav-sep"></div>
-      <button class="nav-ic" title="搜索 ⌘K" id="btn-search">⌕</button>
-      <button class="nav-ic" title="切换主题" id="btn-theme">◐</button>
-      <button class="nav-ic" title="显示设置" id="btn-settings">&#9881;</button>
+      <button class="nav-ic" title="搜索 ⌘K" aria-label="搜索" id="btn-search">⌕</button>
+      <button class="nav-ic" title="切换主题" aria-label="切换主题" id="btn-theme">◐</button>
+      <button class="nav-ic" title="显示设置" aria-label="显示设置" id="btn-settings">&#9881;</button>
     </nav>
     <slot />
   </div>
+
+  <!-- 图片放大 -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="图片预览"><img alt="" /></div>
 
   <!-- Search overlay -->
   <div class="search-ov" id="search-ov">
     <div class="search-box">
       <div class="search-top">
         <span class="search-ic">⌕</span>
-        <input class="search-in" id="search-in" placeholder="搜索笔记、项目、Wiki…" />
+        <input class="search-in" id="search-in" placeholder="搜索笔记、项目、Wiki…" autocomplete="off" />
         <span class="search-esc">ESC</span>
       </div>
       <div class="search-results" id="search-results">
         <div class="s-empty">输入关键词开始搜索</div>
       </div>
       <div class="s-footer">
+        <span class="s-hint"><span class="s-kbd">↑↓</span>选择</span>
         <span class="s-hint"><span class="s-kbd">↵</span>打开</span>
         <span class="s-hint"><span class="s-kbd">ESC</span>关闭</span>
-        <span class="s-hint"><span class="s-kbd">⌘K</span>搜索</span>
       </div>
     </div>
   </div>
@@ -83,7 +145,7 @@ const navItems = [
   <div class="settings-panel" id="settings-panel">
     <div class="sp-header">
       <span>显示设置</span>
-      <button class="sp-close" id="sp-close">&times;</button>
+      <button class="sp-close" id="sp-close" aria-label="关闭">&times;</button>
     </div>
     <div class="sp-body">
       <label class="sp-row">
@@ -116,150 +178,308 @@ const navItems = [
   </div>
 
   <script is:inline>
-    // Settings panel
+  (function () {
+    var D = document;
+    var $ = function (id) { return D.getElementById(id); };
     var defaults = { base: 15, body: 1, ui: 1, width: 760 };
-    function loadSetting(key, def) { var v = localStorage.getItem('mz_' + key); return v !== null ? parseFloat(v) : def; }
-
-    function applyBase(size) {
-      document.documentElement.style.fontSize = size + 'px';
-      var el = document.getElementById('sp-base'); if (el) el.value = size;
-      var vl = document.getElementById('sp-val-base'); if (vl) vl.textContent = size + 'px';
-    }
-    function applyBody(mult) {
-      document.documentElement.style.setProperty('--fs-body', mult);
-      var el = document.getElementById('sp-body'); if (el) el.value = mult;
-      var vl = document.getElementById('sp-val-body'); if (vl) vl.textContent = mult.toFixed(2) + 'x';
-    }
-    function applyUI(mult) {
-      document.documentElement.style.setProperty('--fs-ui', mult);
-      var el = document.getElementById('sp-ui'); if (el) el.value = mult;
-      var vl = document.getElementById('sp-val-ui'); if (vl) vl.textContent = mult.toFixed(2) + 'x';
-    }
-    function applyWidth(w) {
-      document.documentElement.style.setProperty('--content-width', w + 'px');
-      var el = document.getElementById('sp-width'); if (el) el.value = w;
-      var vl = document.getElementById('sp-val-width'); if (vl) vl.textContent = w + 'px';
-    }
-
-    applyBase(loadSetting('base', defaults.base));
-    applyBody(loadSetting('body', defaults.body));
-    applyUI(loadSetting('ui', defaults.ui));
-    applyWidth(loadSetting('width', defaults.width));
-
-    // Font presets
     var fontPresets = {
-      serif: { fh: "'Lora',Georgia,serif",          fb: "'Source Serif 4',Georgia,serif", fm: "'JetBrains Mono',monospace" },
-      sans:  { fh: "'DM Sans',system-ui,sans-serif", fb: "'Inter',system-ui,sans-serif",  fm: "'JetBrains Mono',monospace" },
-      mono:  { fh: "'Space Mono',monospace",         fb: "'Atkinson Hyperlegible',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
-      cn:    { fh: "'Noto Serif SC',Georgia,serif",  fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" }
+      serif: { fh: "'Lora',Georgia,serif", fb: "'Source Serif 4',Georgia,serif", fm: "'JetBrains Mono',monospace" },
+      sans:  { fh: "'DM Sans',system-ui,sans-serif", fb: "'Inter',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
+      mono:  { fh: "'Space Mono',monospace", fb: "'Atkinson Hyperlegible',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
+      cn:    { fh: "'Noto Serif SC',Georgia,serif", fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" }
     };
-    function applyFont(key) {
-      var p = fontPresets[key] || fontPresets.serif;
-      document.documentElement.style.setProperty('--fh', p.fh);
-      document.documentElement.style.setProperty('--fb', p.fb);
-      document.documentElement.style.setProperty('--fm', p.fm);
-      var el = document.getElementById('sp-font'); if (el) el.value = key;
+    function num(key, def) { var v = localStorage.getItem('mz_' + key); return v !== null ? parseFloat(v) : def; }
+    function setVal(id, text) { var el = $(id); if (el) el.textContent = text; }
+    function setInput(id, v) { var el = $(id); if (el) el.value = v; }
+
+    function applyBase(s)  { D.documentElement.style.fontSize = s + 'px'; setInput('sp-base', s); setVal('sp-val-base', s + 'px'); }
+    function applyBody(m)  { D.documentElement.style.setProperty('--fs-body', m); setInput('sp-body', m); setVal('sp-val-body', m.toFixed(2) + 'x'); }
+    function applyUI(m)    { D.documentElement.style.setProperty('--fs-ui', m);   setInput('sp-ui', m);   setVal('sp-val-ui', m.toFixed(2) + 'x'); }
+    function applyWidth(w) { D.documentElement.style.setProperty('--content-width', w + 'px'); setInput('sp-width', w); setVal('sp-val-width', w + 'px'); }
+    function applyFont(k) {
+      var p = fontPresets[k] || fontPresets.serif;
+      D.documentElement.style.setProperty('--fh', p.fh);
+      D.documentElement.style.setProperty('--fb', p.fb);
+      D.documentElement.style.setProperty('--fm', p.fm);
+      setInput('sp-font', k);
     }
-    applyFont(localStorage.getItem('mz_font') || 'serif');
+    var appliers = { base: applyBase, body: applyBody, ui: applyUI, width: applyWidth };
 
-    document.getElementById('sp-font').addEventListener('change', function() {
-      applyFont(this.value);
-      localStorage.setItem('mz_font', this.value);
-    });
-
-    document.getElementById('btn-settings').addEventListener('click', function() {
-      document.getElementById('settings-panel').classList.toggle('open');
-    });
-    document.getElementById('sp-close').addEventListener('click', function() {
-      document.getElementById('settings-panel').classList.remove('open');
-    });
-    document.addEventListener('click', function(e) {
-      var panel = document.getElementById('settings-panel');
-      var btn = document.getElementById('btn-settings');
-      if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== btn) {
-        panel.classList.remove('open');
-      }
-    });
-
-    ['base','body','ui','width'].forEach(function(k) {
-      var cap = k.charAt(0).toUpperCase() + k.slice(1);
-      document.getElementById('sp-' + k).addEventListener('input', function() {
-        var v = parseFloat(this.value);
-        window['apply' + cap](v);
-        localStorage.setItem('mz_' + k, v);
-      });
-    });
-
-    document.getElementById('sp-reset').addEventListener('click', function() {
-      applyBase(defaults.base); localStorage.setItem('mz_base', defaults.base);
-      applyBody(defaults.body); localStorage.setItem('mz_body', defaults.body);
-      applyUI(defaults.ui); localStorage.setItem('mz_ui', defaults.ui);
-      applyWidth(defaults.width); localStorage.setItem('mz_width', defaults.width);
-      applyFont('serif'); localStorage.setItem('mz_font', 'serif');
-    });
-
-    // Theme toggle
-    document.getElementById('btn-theme').addEventListener('click', function(){
-      var cur = document.documentElement.getAttribute('data-theme');
-      var next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('mz_theme', next);
-    });
-
-    // Search
+    // ── 搜索：优先 Pagefind 全文索引，构建产物不存在时（dev）回退到 JSON 索引 ──
     var searchIdx = [];
-    (async function(){ try { var r = await fetch('/search-index.json'); searchIdx = await r.json(); } catch(e){} })();
+    var selIdx = -1;
+    var reqId = 0;
+    var pagefind = null;
+    var pagefindTried = false;
 
-    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function loadIndex() {
+      if (searchIdx.length) return;
+      fetch('/search-index.json').then(function (r) { return r.json(); })
+        .then(function (j) { searchIdx = j; }).catch(function () {});
+    }
 
-    function updateResults(q){
-      var container = document.getElementById('search-results');
+    function getPagefind() {
+      if (pagefindTried) return Promise.resolve(pagefind);
+      pagefindTried = true;
+      // 该脚本是 is:inline，不经 Vite 处理，动态 import 会原样保留
+      return import('/pagefind/pagefind.js')
+        .then(function (m) {
+          return Promise.resolve(m.options ? m.options({ excerptLength: 24 }) : null)
+            .then(function () { return m.init ? m.init() : null; })
+            .then(function () { pagefind = m; return m; });
+        })
+        .catch(function () { pagefind = null; return null; });
+    }
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function hl(s, q) {
+      var t = esc(s), i = t.toLowerCase().indexOf(q);
+      if (i < 0 || !q) return t;
+      return t.slice(0, i) + '<mark>' + t.slice(i, i + q.length) + '</mark>' + t.slice(i + q.length);
+    }
+    function renderEmpty(box, q) {
+      box.innerHTML = '<div class="s-empty">没有找到「' + esc(q) + '」</div>';
+    }
+
+    function updateResults(q) {
+      var box = $('search-results'); if (!box) return;
       var ql = q.toLowerCase().trim();
-      if(!ql){ container.innerHTML = '<div class="s-empty">输入关键词开始搜索</div>'; return; }
-      var results = searchIdx.filter(function(i){ return i.title.toLowerCase().includes(ql) || i.excerpt.toLowerCase().includes(ql) || i.path.toLowerCase().includes(ql); }).slice(0,10);
-      if(!results.length){ container.innerHTML = '<div class="s-empty">没有找到「'+esc(q)+'」</div>'; return; }
-      container.innerHTML = results.map(function(r){
-        return '<a class="sr" href="'+r.path+'"><div class="sr-name">'+esc(r.title)+'</div><div class="sr-path">'+esc(r.path)+'</div><div class="sr-exc">'+esc(r.excerpt||'')+'</div></a>';
+      selIdx = -1;
+      if (!ql) { box.innerHTML = '<div class="s-empty">输入关键词开始搜索</div>'; return; }
+
+      var my = ++reqId;
+      getPagefind().then(function (pf) {
+        if (my !== reqId) return;
+        if (!pf) { fallbackResults(box, q, ql); return; }
+        return pf.search(q).then(function (s) {
+          if (my !== reqId) return;
+          return Promise.all(s.results.slice(0, 10).map(function (r) { return r.data(); }));
+        }).then(function (rs) {
+          if (my !== reqId || !rs) return;
+          if (!rs.length) { renderEmpty(box, q); return; }
+          box.innerHTML = rs.map(function (r) {
+            var path = r.url;
+            try { path = decodeURI(r.url); } catch (e) {}
+            return '<a class="sr" href="' + esc(r.url) + '">'
+              + '<div class="sr-name">' + esc((r.meta && r.meta.title) || path) + '</div>'
+              + '<div class="sr-path">' + esc(path) + '</div>'
+              // excerpt 由 Pagefind 自己生成（含 <mark>），是可信 HTML
+              + '<div class="sr-exc">' + r.excerpt + '</div></a>';
+          }).join('');
+        });
+      }).catch(function () { fallbackResults(box, q, ql); });
+    }
+
+    function fallbackResults(box, q, ql) {
+      var res = searchIdx.filter(function (i) {
+        return i.title.toLowerCase().includes(ql) || (i.excerpt || '').toLowerCase().includes(ql) || i.path.toLowerCase().includes(ql);
+      }).sort(function (a, b) {
+        return (b.title.toLowerCase().includes(ql) ? 1 : 0) - (a.title.toLowerCase().includes(ql) ? 1 : 0);
+      }).slice(0, 10);
+      if (!res.length) { renderEmpty(box, q); return; }
+      box.innerHTML = res.map(function (r) {
+        return '<a class="sr" href="' + esc(r.path) + '">'
+          + '<div class="sr-name">' + hl(r.title, ql) + '</div>'
+          + '<div class="sr-path">' + hl(r.path, ql) + '</div>'
+          + '<div class="sr-exc">' + hl(r.excerpt || '', ql) + '</div></a>';
       }).join('');
     }
-
-    document.getElementById('search-in').addEventListener('input', function(){ updateResults(this.value); });
-    document.getElementById('btn-search').addEventListener('click', function(){
-      var ov = document.getElementById('search-ov');
+    function moveSel(d) {
+      var items = D.querySelectorAll('#search-results .sr');
+      if (!items.length) return;
+      selIdx = (selIdx + d + items.length) % items.length;
+      items.forEach(function (el, i) { el.classList.toggle('sel', i === selIdx); });
+      items[selIdx].scrollIntoView({ block: 'nearest' });
+    }
+    function openSearch() {
+      var ov = $('search-ov'); if (!ov) return;
+      loadIndex();
+      getPagefind();
       ov.classList.add('open');
-      document.getElementById('search-in').value = '';
-      document.getElementById('search-in').focus();
+      var inp = $('search-in');
+      if (inp) { inp.value = ''; inp.focus(); }
       updateResults('');
-    });
-    document.getElementById('search-ov').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
-    document.addEventListener('keydown', function(e){
-      if((e.metaKey||e.ctrlKey)&&e.key==='k'){ e.preventDefault(); document.getElementById('btn-search').click(); }
-      if(e.key==='Escape') document.getElementById('search-ov').classList.remove('open');
-    });
+    }
+    function closeSearch() { var ov = $('search-ov'); if (ov) ov.classList.remove('open'); }
 
-    // Reading progress
-    (function(){
-      var bar = document.getElementById('pbar');
-      if(!bar) return;
-      window.addEventListener('scroll', function(){
-        var h = document.documentElement.scrollHeight - window.innerHeight;
-        bar.style.width = h>0 ? Math.min(100,(window.scrollY/h)*100)+'%' : '0';
-      },{passive:true});
-      // Active TOC
-      window.addEventListener('scroll', function(){
+    // ── 每页绑定（ClientRouter 会换掉 body，标志随之失效）──
+    function bindPage() {
+      if (D.body.dataset.mzBound) return;
+      D.body.dataset.mzBound = '1';
+
+      applyBase(num('base', defaults.base));
+      applyBody(num('body', defaults.body));
+      applyUI(num('ui', defaults.ui));
+      applyWidth(num('width', defaults.width));
+      applyFont(localStorage.getItem('mz_font') || 'serif');
+
+      ['base', 'body', 'ui', 'width'].forEach(function (k) {
+        var el = $('sp-' + k); if (!el) return;
+        el.addEventListener('input', function () {
+          var v = parseFloat(this.value);
+          appliers[k](v);
+          localStorage.setItem('mz_' + k, v);
+        });
+      });
+      var fsel = $('sp-font');
+      if (fsel) fsel.addEventListener('change', function () { applyFont(this.value); localStorage.setItem('mz_font', this.value); });
+
+      var reset = $('sp-reset');
+      if (reset) reset.addEventListener('click', function () {
+        applyBase(defaults.base);   localStorage.setItem('mz_base', defaults.base);
+        applyBody(defaults.body);   localStorage.setItem('mz_body', defaults.body);
+        applyUI(defaults.ui);       localStorage.setItem('mz_ui', defaults.ui);
+        applyWidth(defaults.width); localStorage.setItem('mz_width', defaults.width);
+        applyFont('serif');         localStorage.setItem('mz_font', 'serif');
+      });
+
+      var bs = $('btn-settings');
+      if (bs) bs.addEventListener('click', function (e) { e.stopPropagation(); $('settings-panel').classList.toggle('open'); });
+      var spc = $('sp-close');
+      if (spc) spc.addEventListener('click', function () { $('settings-panel').classList.remove('open'); });
+
+      var bt = $('btn-theme');
+      if (bt) bt.addEventListener('click', function () {
+        var next = D.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        D.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('mz_theme', next);
+        D.dispatchEvent(new CustomEvent('mz:theme'));
+      });
+
+      var bsr = $('btn-search');
+      if (bsr) bsr.addEventListener('click', openSearch);
+      var si = $('search-in');
+      if (si) si.addEventListener('input', function () { updateResults(this.value); });
+      var ov = $('search-ov');
+      if (ov) ov.addEventListener('click', function (e) { if (e.target === this) closeSearch(); });
+
+      var bm = $('btn-menu');
+      if (bm) bm.addEventListener('click', function () {
+        var sb = $('sb'), scr = $('sb-scrim');
+        if (sb) sb.classList.toggle('open');
+        if (scr) scr.classList.toggle('open');
+      });
+
+      // 图片放大
+      var lb = $('lightbox');
+      if (lb) {
+        D.querySelectorAll('.doc-body img').forEach(function (img) {
+          img.addEventListener('click', function () {
+            var big = lb.querySelector('img');
+            big.src = img.currentSrc || img.src;
+            big.alt = img.alt || '';
+            lb.classList.add('open');
+          });
+        });
+        lb.addEventListener('click', function () { this.classList.remove('open'); });
+      }
+
+      // Wiki 页 PDF 阅读器的展开/收起
+      D.querySelectorAll('[data-pdf-toggle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var rd = btn.closest('.pdf-rd');
+          if (!rd) return;
+          var fr = rd.querySelector('.pdf-fr');
+          if (!fr) return;
+          var big = fr.style.height === '660px';
+          fr.style.height = big ? '450px' : '660px';
+          btn.textContent = big ? '展开' : '收起';
+        });
+      });
+
+      updateProgress();
+    }
+
+    // ── 滚动：阅读进度 + 目录高亮 ──
+    var ticking = false;
+    function updateProgress() {
+      var bar = $('pbar');
+      var h = D.documentElement.scrollHeight - window.innerHeight;
+      if (bar) bar.style.width = h > 0 ? Math.min(100, (window.scrollY / h) * 100) + '%' : '0';
+
+      var lis = D.querySelectorAll('.toc-li');
+      if (lis.length) {
         var cur = '';
-        document.querySelectorAll('.toc-li').forEach(function(li){
-          var id = li.getAttribute('data-id');
-          if(!id) return;
-          var el = document.getElementById(id);
-          if(el && el.getBoundingClientRect().top < 120) cur = id;
+        lis.forEach(function (li) {
+          var id = li.getAttribute('data-id'); if (!id) return;
+          var el = D.getElementById(id);
+          if (el && el.getBoundingClientRect().top < 140) cur = id;
         });
-        document.querySelectorAll('.toc-li').forEach(function(li){ li.classList.toggle('on', li.getAttribute('data-id')===cur); });
-        document.querySelectorAll('.docs-sb-link').forEach(function(link){
-          link.classList.toggle('on', link.getAttribute('data-id')===cur);
+        if (!cur && lis[0]) cur = lis[0].getAttribute('data-id');
+        lis.forEach(function (li) { li.classList.toggle('on', li.getAttribute('data-id') === cur); });
+        D.querySelectorAll('.docs-sb-link').forEach(function (l) {
+          l.classList.toggle('on', l.getAttribute('data-id') === cur);
         });
-      },{passive:true});
-    })();
+      }
+      ticking = false;
+    }
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateProgress);
+    }
+
+    if (!window.__mzGlobalHook) {
+      window.__mzGlobalHook = 1;
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      D.addEventListener('astro:page-load', bindPage);
+      D.addEventListener('keydown', function (e) {
+        var ov = $('search-ov');
+        var open = ov && ov.classList.contains('open');
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); return; }
+        if (e.key === 'Escape') {
+          closeSearch();
+          var sp = $('settings-panel'); if (sp) sp.classList.remove('open');
+          var lb = $('lightbox'); if (lb) lb.classList.remove('open');
+        }
+        if (!open) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); }
+        if (e.key === 'ArrowUp')   { e.preventDefault(); moveSel(-1); }
+        if (e.key === 'Enter') {
+          var sel = D.querySelector('#search-results .sr.sel') || D.querySelector('#search-results .sr');
+          if (sel) { e.preventDefault(); location.href = sel.getAttribute('href'); }
+        }
+      });
+      D.addEventListener('click', function (e) {
+        var panel = $('settings-panel');
+        if (panel && panel.classList.contains('open') && !panel.contains(e.target) && e.target !== $('btn-settings')) {
+          panel.classList.remove('open');
+        }
+      });
+    }
+
+    bindPage();
+  })();
+  </script>
+
+  <script>
+    // Mermaid：仅当页面存在图表时才动态载入（Vite 会单独分包）
+    let mermaidLib: typeof import('mermaid').default | null = null;
+    async function renderMermaid() {
+      const nodes = Array.from(document.querySelectorAll<HTMLElement>('pre.mermaid'));
+      if (!nodes.length) return;
+      if (!mermaidLib) mermaidLib = (await import('mermaid')).default;
+      const mm = mermaidLib;
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      mm.initialize({
+        startOnLoad: false,
+        theme: dark ? 'dark' : 'neutral',
+        securityLevel: 'strict',
+        fontFamily: 'var(--fm)',
+      });
+      // 主题切换后需要用原始源码重绘
+      for (const n of nodes) {
+        n.removeAttribute('data-processed');
+        n.textContent = n.getAttribute('data-src') || n.textContent;
+      }
+      try {
+        await mm.run({ nodes });
+      } catch (e) {
+        console.error('[mermaid]', e);
+      }
+    }
+    document.addEventListener('astro:page-load', renderMermaid);
+    document.addEventListener('mz:theme', renderMermaid);
   </script>
 </body>
 </html>

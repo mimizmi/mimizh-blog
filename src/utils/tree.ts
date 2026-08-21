@@ -16,6 +16,9 @@ export interface TreeNode {
   readingTime?: string;
   /** For wiki: PDF link */
   pdf?: string;
+  /** frontmatter draft:true —— 不进 RSS / 「最近更新」，但页面仍可直接访问。
+   *  注意：`_` 开头的文件被 Astro 内容集合整体忽略，根本不会走到这里。 */
+  isDraft?: boolean;
   /** For projects: status, tags, icon, tagline */
   status?: string;
   tags?: string[];
@@ -55,7 +58,7 @@ function buildTree(
       const children = build(val.__children || {}, childSegs);
       if (val.__entry) {
         const e = val.__entry;
-        const raw = e._raw as { collection: string; id: string; data?: { date?: string }; body?: string };
+        const raw = e._raw as { collection: string; id: string; data?: { date?: string; draft?: boolean }; body?: string };
         const resolvedDate = resolveDate(raw);
         const readingTime = raw.body ? computeReadingTime(raw.body) : '';
         result.push({
@@ -68,6 +71,7 @@ function buildTree(
           count: 1,
           resolvedDate,
           readingTime,
+          isDraft: raw.data?.draft === true,
           tags: e.tags || [],
           ...(kind === 'note' ? { note: e._raw } : {}),
           ...(kind === 'wiki' ? { wikiEntry: e._raw, pdf: e.pdf } : {}),
@@ -108,25 +112,29 @@ function countNodes(node: TreeNode | TreeNode[]): number {
 // ── Note tree ─────────────────────────────────────
 export async function buildNoteTree(): Promise<TreeNode[]> {
   const notes = await getCollection('notes');
-  return buildTree(
+  const tree = buildTree(
     notes.map(n => ({
       id: n.id, title: n.data.title || '', date: n.data.date || '',
       desc: n.data.description || '', tags: n.data.tags || [], _raw: n,
     })),
     'note'
   );
+  registerColors(tree);
+  return tree;
 }
 
 // ── Wiki tree ─────────────────────────────────────
 export async function buildWikiTree(): Promise<TreeNode[]> {
   const wiki = await getCollection('wiki');
-  return buildTree(
+  const tree = buildTree(
     wiki.map(w => ({
       id: w.id, title: w.data.title || '', date: w.data.date || '',
       desc: w.data.description || '', tags: w.data.tags || [], pdf: w.data.pdf, _raw: w,
     })),
     'wiki'
   );
+  registerColors(tree);
+  return tree;
 }
 
 // ── Project tree ──────────────────────────────────
@@ -176,20 +184,33 @@ export function flattenNodes(nodes: TreeNode[]): TreeNode[] {
 }
 
 // ── Color helpers ─────────────────────────────────
-const CAT_COLORS = ['var(--tech)', 'var(--reading)', 'var(--life)', 'var(--project)', 'var(--wiki)', 'var(--paper)'];
-const colorCache: Record<string, string> = {};
+// 顶层目录 → 强调色。要求：(1) 纯函数式，同一目录在任何页面颜色一致；
+// (2) 同一集合内的顶层目录尽量不撞色。
+// 做法：按字母序为顶层目录分配调色板下标（树本身已排序，因此结果稳定）。
+// 旧实现按"首次遇到的顺序"分配并缓存，构建顺序不同会让同一目录换色。
+const CAT_COLORS = [
+  'var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)',
+  'var(--p5)', 'var(--p6)', 'var(--p7)', 'var(--p8)',
+];
+
+const colorRegistry: Record<string, string> = {};
+
+/** 由各 build*Tree 在返回前调用，登记顶层目录的配色 */
+function registerColors(tree: TreeNode[]) {
+  [...tree].map(n => n.name).sort().forEach((name, i) => {
+    if (!(name in colorRegistry)) colorRegistry[name] = CAT_COLORS[i % CAT_COLORS.length];
+  });
+}
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 export function getFolderColor(path: string): string {
-  if (colorCache[path]) return colorCache[path];
   const topLevel = path.split('/')[0] || '';
-  if (colorCache[topLevel]) {
-    colorCache[path] = colorCache[topLevel];
-    return colorCache[topLevel];
-  }
-  const color = CAT_COLORS[Object.keys(colorCache).length % CAT_COLORS.length];
-  colorCache[topLevel] = color;
-  colorCache[path] = color;
-  return color;
+  return colorRegistry[topLevel] || CAT_COLORS[hashStr(topLevel) % CAT_COLORS.length];
 }
 
 export { STATUS_COLORS } from '../config';

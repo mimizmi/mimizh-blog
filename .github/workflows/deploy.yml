@@ -24,6 +24,8 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
+      # frontmatter / 类型出错时直接让 CI 红，而不是静默产出空白页
+      - run: npm run check
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,7 +1,9 @@
 ---
+import { slug } from 'github-slugger';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import SidebarTree from '../../components/SidebarTree.astro';
+import Sidebar from '../../components/Sidebar.astro';
 import { buildWikiTree, findNode, getAncestors, getFolderColor } from '../../utils/tree';
+import { getBacklinksFor } from '../../utils/backlinks';
 import type { TreeNode } from '../../utils/tree';
 
 export async function getStaticPaths() {
@@ -43,13 +45,35 @@ const pageTitle = isNote ? (node.wikiEntry?.data.title || '') : node.name;
 let folderChildren: TreeNode[] = [];
 if (!isNote && node.children) folderChildren = node.children;
 
+const sectionColor = getFolderColor(node.segments.join('/'));
+
+// 目录只显示纯文本，去掉行内 markdown 记号
+function plainText(s: string) {
+  return s
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/\*\*([^*]*)\*\*/g, '$1')
+    .replace(/\*([^*]*)\*/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .trim();
+}
+
 // For note: render content
 let Content: any;
 let entry: any = null;
+let toc: { id: string; label: string; level: number }[] = [];
+let backlinks: { url: string; title: string }[] = [];
 if (isNote && node.wikiEntry) {
   entry = node.wikiEntry;
   const rendered = await node.wikiEntry.render();
   Content = rendered.Content;
+
+  backlinks = await getBacklinksFor(`/wiki/${node.segments.join('/')}/`);
+
+  const headingRe = /^(#{2,4})\s+(.+)$/gm;
+  let m;
+  while ((m = headingRe.exec(node.wikiEntry.body || '')) !== null) {
+    toc.push({ id: slug(m[2]), label: plainText(m[2]), level: m[1].length });
+  }
 }
 
 const secEntries = ancestors.length > 0
@@ -57,21 +81,26 @@ const secEntries = ancestors.length > 0
   : [];
 ---
 
-<BaseLayout title={`${pageTitle} · Wiki`} activeNav="wiki" breadcrumbs={breadcrumbs}>
+<BaseLayout
+  title={`${pageTitle} · Wiki`}
+  activeNav="wiki"
+  breadcrumbs={breadcrumbs}
+  accent={sectionColor}
+  hasSidebar={true}
+  ogType={isNote ? 'article' : 'website'}
+  description={isNote
+    ? (entry?.data.description || `${pageTitle} — Wiki 条目`)
+    : `${node.name} 分类下的 ${node.count} 条 Wiki 笔记`}
+>
   <div class="main">
-    <div class="sb">
-      <div style="padding:.25rem 0 1rem">
-        <div class="tree-sec">Wiki</div>
-        <SidebarTree nodes={tree} ancestors={ancestors} currentNode={node} basePath="/wiki/" />
-      </div>
-    </div>
+    <Sidebar nodes={tree} ancestors={ancestors} currentNode={node} basePath="/wiki/" label="Wiki" />
 
     {!isNote ? (
-      <div class="main-col" style="overflow-y:auto;height:calc(100vh - var(--nav-h))">
+      <div class="main-col">
         <div class="page fu">
           <div class="ph">
             <div class="pt" style="display:flex;align-items:center;gap:.5rem">
-              <span style={`width:8px;height:8px;border-radius:50%;background:${getFolderColor(node.segments.join('/'))};display:inline-block`}></span>
+              <span style={`width:8px;height:8px;border-radius:50%;background:${sectionColor};display:inline-block`}></span>
               {node.name}
             </div>
             <div class="pd">{node.count} 条笔记</div>
@@ -80,7 +109,7 @@ const secEntries = ancestors.length > 0
           {folderChildren.some(c => c.type === 'folder') && (
             <div class="wiki-grid">
               {folderChildren.filter(c => c.type === 'folder').map(f => (
-                <a class="wiki-sc" href={`/wiki/${f.segments.join('/')}/`}>
+                <a class="wiki-sc" href={`/wiki/${f.segments.join('/')}/`} style={`--cc:${getFolderColor(f.segments.join('/'))}`}>
                   <div class="wiki-sc-dot" style={`background:${getFolderColor(f.segments.join('/'))}`}></div>
                   <div class="wiki-sc-name">{f.name}</div>
                   <div class="wiki-sc-desc">{f.count} 条笔记</div>
@@ -106,13 +135,13 @@ const secEntries = ancestors.length > 0
         </div>
       </div>
     ) : (
-      <div style="flex:1;overflow-y:auto;height:calc(100vh - var(--nav-h))">
+      <div class="main-col">
         <div class="doc-layout">
-          <div class="doc-main fu">
-            <a class="back" href={`/wiki/${node.segments.slice(0, -1).join('/')}/`}>
+          <div class="doc-main fu" data-pagefind-body>
+            <a class="back" data-pagefind-ignore href={`/wiki/${node.segments.slice(0, -1).join('/')}/`}>
               ← {ancestors.length > 1 ? ancestors[ancestors.length - 2]?.name : 'Wiki'}
             </a>
-            <span class="doc-cat" style={`color:${getFolderColor(node.segments.join('/'))};font-family:var(--fm);font-size:.67rem;letter-spacing:.08em`}>
+            <span class="doc-cat" style={`color:${sectionColor}`}>
               Wiki / {node.segments.slice(0, -1).join(' / ') || ''}
             </span>
             <h1 class="doc-title">{entry?.data.title}</h1>
@@ -122,11 +151,11 @@ const secEntries = ancestors.length > 0
               {node.pdf && <><span>·</span><span style="color:var(--paper)">PDF 附件</span></>}
             </div>
             {node.pdf && (
-              <div class="pdf-rd">
+              <div class="pdf-rd" data-pagefind-ignore>
                 <div class="pdf-hd">
                   <span class="pdf-nm"><span class="pdf-dot"></span>PDF · {entry?.data.title}</span>
                   <div class="pdf-acts">
-                    <button class="pdf-ab" onclick="var f=this.closest('.pdf-rd').querySelector('.pdf-fr');f.style.height=f.style.height==='660px'?'450px':'660px';this.textContent=f.style.height==='660px'?'收起':'展开';">展开</button>
+                    <button class="pdf-ab" type="button" data-pdf-toggle>展开</button>
                     <a class="pdf-ab" href={node.pdf} target="_blank" rel="noreferrer">新标签 ↗</a>
                   </div>
                 </div>
@@ -136,18 +165,47 @@ const secEntries = ancestors.length > 0
             <div class="doc-body">
               {Content && <Content />}
             </div>
+
+            {backlinks.length > 0 && (
+              <section class="backlinks" data-pagefind-ignore aria-label="反向链接">
+                <div class="backlinks-lbl">被这些笔记引用</div>
+                <ul class="backlinks-list">
+                  {backlinks.map(b => (
+                    <li><a href={b.url}>{b.title}</a></li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
-          {secEntries.length > 0 && (
-            <div class="doc-toc-col">
-              <div class="doc-toc-lbl">本节其他</div>
-              {secEntries.map(e => (
-                <div style="font-size:.74rem;color:var(--tx3);padding:.24rem 0 .24rem .68rem;border-left:1.5px solid var(--bd);cursor:pointer;transition:all .15s;line-height:1.35;margin-bottom:.04rem"
-                  onmouseenter="this.style.color='var(--tx2)'" onmouseleave="this.style.color='var(--tx3)'"
-                  onclick={`location.href='/wiki/${e.segments.join('/')}/'`}>
-                  {e.wikiEntry?.data.title}
-                </div>
-              ))}
-            </div>
+          {(toc.length > 0 || secEntries.length > 0) && (
+            <nav class="doc-toc-col" data-pagefind-ignore aria-label="本页目录">
+              {toc.length > 0 && (
+                <>
+                  <div class="doc-toc-lbl">目录</div>
+                  <ul class="toc-ul">
+                    {toc.map(t => (
+                      <li class={`toc-li${t.level === 3 ? ' h3' : t.level === 4 ? ' h4' : ''}`} data-id={t.id}>
+                        <a href={`#${t.id}`} style="display:block;color:inherit;text-decoration:none">{t.label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {secEntries.length > 0 && (
+                <>
+                  <div class="doc-toc-lbl" style="margin-top:1.6rem">本节其他</div>
+                  <ul class="toc-ul">
+                    {secEntries.map(e => (
+                      <li class="toc-li">
+                        <a href={`/wiki/${e.segments.join('/')}/`} style="display:block;color:inherit;text-decoration:none">
+                          {e.wikiEntry?.data.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </nav>
           )}
         </div>
       </div>
