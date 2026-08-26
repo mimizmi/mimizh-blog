@@ -193,6 +193,23 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
 
 /* ── Article body ─────────────────────────────────── */
 .doc-body{padding:2.2rem 0}
+
+/* ── 中文排版 ─────────────────────────────────────── */
+/* 中西文间隙：构建期由 rehypeCjkSpacing 插入的空元素，见 plugins/markdown.mjs。
+   用 inline + padding 而不是 inline-block，空元素才不会扰动行盒基线。 */
+.hws{display:inline;padding-inline-start:.125em}
+/* 全角标点挤压 + 行尾标点悬挂。两者支持度都不完整（前者 Chromium、后者 Safari），
+   纯渐进增强：不支持的浏览器忽略这两条，退回改动前的表现。
+   逐个列出文本元素而非落在 .doc-body 上，避免继承进代码块改变等宽对齐。 */
+.doc-body :is(p,li,td,th,h1,h2,h3,h4,h5,h6,blockquote,figcaption,summary,dt,dd),
+.home-p{
+  text-spacing-trim:trim-start;
+  hanging-punctuation:allow-end;
+}
+/* 等宽数字：日期、计数这些会随内容跳动的地方锁住字宽 */
+.doc-meta,.fd,.cat-c-meta,.wiki-sc-meta,.yr-sep,.tr-badge,.docs-sb-tag,.proj-st{
+  font-variant-numeric:tabular-nums;
+}
 .doc-body h1,.doc-body h2,.doc-body h3,.doc-body h4{scroll-margin-top:calc(var(--nav-h) + 1.2rem)}
 .doc-body h1{font-family:var(--fh);font-size:calc(1.4rem * var(--fs-body));font-weight:600;color:var(--tx);margin:2.6rem 0 .9rem;letter-spacing:-.02em;padding-bottom:.4rem;border-bottom:1px solid var(--bd)}
 .doc-body h2{position:relative;font-family:var(--fh);font-size:calc(1.18rem * var(--fs-body));font-weight:600;color:var(--tx);margin:2.6rem 0 .8rem;letter-spacing:-.01em}

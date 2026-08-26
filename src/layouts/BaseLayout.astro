@@ -63,6 +63,15 @@ const navItems = [
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" />
   <ClientRouter />
   <script is:inline>
+    // 字体预设表：拉丁字体在前（英文数字仍走原字体），汉字回退到 Noto，
+    // 否则中文会掉进系统默认衬线（Windows 上是宋体，小字号发虚断笔）。
+    // 只在这里定义一次，下方设置面板复用，避免两份表各改各的。
+    window.__mzFontPresets = {
+      serif: { fh: "'Lora','Noto Serif SC',Georgia,serif", fb: "'Source Serif 4','Noto Serif SC',Georgia,serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" },
+      sans:  { fh: "'DM Sans','Noto Sans SC',system-ui,sans-serif", fb: "'Inter','Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" },
+      mono:  { fh: "'Space Mono','Noto Sans SC',monospace", fb: "'Atkinson Hyperlegible','Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" },
+      cn:    { fh: "'Noto Serif SC',Georgia,serif", fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" }
+    };
     // 首屏绘制前应用偏好，避免闪白；换页后由 astro:after-swap 再次应用
     window.__mzPrefs = function () {
       var d = document.documentElement, ls = localStorage;
@@ -71,12 +80,7 @@ const navItems = [
       d.style.setProperty('--fs-body', ls.getItem('mz_body') || '1');
       d.style.setProperty('--fs-ui', ls.getItem('mz_ui') || '1');
       d.style.setProperty('--content-width', (ls.getItem('mz_width') || '760') + 'px');
-      var P = {
-        serif: { fh: "'Lora',Georgia,serif", fb: "'Source Serif 4',Georgia,serif", fm: "'JetBrains Mono',monospace" },
-        sans:  { fh: "'DM Sans',system-ui,sans-serif", fb: "'Inter',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
-        mono:  { fh: "'Space Mono',monospace", fb: "'Atkinson Hyperlegible',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
-        cn:    { fh: "'Noto Serif SC',Georgia,serif", fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" }
-      }[ls.getItem('mz_font') || 'serif'];
+      var P = window.__mzFontPresets[ls.getItem('mz_font') || 'serif'];
       d.style.setProperty('--fh', P.fh);
       d.style.setProperty('--fb', P.fb);
       d.style.setProperty('--fm', P.fm);
@@ -182,12 +186,7 @@ const navItems = [
     var D = document;
     var $ = function (id) { return D.getElementById(id); };
     var defaults = { base: 15, body: 1, ui: 1, width: 760 };
-    var fontPresets = {
-      serif: { fh: "'Lora',Georgia,serif", fb: "'Source Serif 4',Georgia,serif", fm: "'JetBrains Mono',monospace" },
-      sans:  { fh: "'DM Sans',system-ui,sans-serif", fb: "'Inter',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
-      mono:  { fh: "'Space Mono',monospace", fb: "'Atkinson Hyperlegible',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" },
-      cn:    { fh: "'Noto Serif SC',Georgia,serif", fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono',monospace" }
-    };
+    var fontPresets = window.__mzFontPresets;
     function num(key, def) { var v = localStorage.getItem('mz_' + key); return v !== null ? parseFloat(v) : def; }
     function setVal(id, text) { var el = $(id); if (el) el.textContent = text; }
     function setInput(id, v) { var el = $(id); if (el) el.value = v; }

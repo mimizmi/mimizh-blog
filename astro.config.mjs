@@ -10,6 +10,7 @@ import {
   rehypeHeadingAnchors,
   rehypeExternalLinks,
   remarkMermaid,
+  rehypeCjkSpacing,
 } from './src/plugins/markdown.mjs';
 import { remarkWikiLinks } from './src/plugins/wikilinks.mjs';
 
@@ -70,6 +71,8 @@ export default defineConfig({
       rehypeTableWrap,
       rehypeHeadingAnchors,
       rehypeExternalLinks,
+      // 放最后：等结构类插件都改完 AST，再切文本节点插间隙
+      rehypeCjkSpacing,
     ],
   },
   build: {

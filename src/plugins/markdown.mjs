@@ -205,3 +205,71 @@ export function remarkMermaid() {
     walk(tree);
   };
 }
+
+// ── 6. 中西文混排间隙 ─────────────────────────────────────
+// 汉字与拉丁/数字相邻时插入一个空的 <span class="hws">，由 CSS 给出 1/8 em 的
+// 视觉间隙。插空元素而不是真空格：复制粘贴与 Pagefind 索引都拿不到多余字符。
+// CJK：汉字、假名、谚文。刻意不含 U+3000–303F 与全角形式——「。」「，」
+// 本身自带右侧留白，再补间隙反而过宽。
+const RE_CJK_LTN = /([⺀-⻿぀-ヿ㐀-䶿一-鿿豈-﫿가-힯])([A-Za-z0-9À-ɏ@#$%&\[({<])/g;
+const RE_LTN_CJK = /([A-Za-z0-9À-ɏ@#$%&\])}>])([⺀-⻿぀-ヿ㐀-䶿一-鿿豈-﫿가-힯])/g;
+
+// 这些子树里的文字不参与：代码、公式、图表源码，加间隙只会改变语义或错位。
+const HWS_SKIP_TAGS = new Set(['code', 'pre', 'kbd', 'samp', 'var', 'script', 'style', 'svg', 'math', 'textarea']);
+const HWS_SKIP_CLASS = (c) => c === 'mermaid' || c === 'no-hws' || c.startsWith('katex');
+
+function hwsSkipped(node) {
+  if (HWS_SKIP_TAGS.has(node.tagName)) return true;
+  const cls = node.properties?.className;
+  const list = Array.isArray(cls) ? cls : typeof cls === 'string' ? cls.split(/\s+/) : [];
+  return list.some((c) => typeof c === 'string' && HWS_SKIP_CLASS(c));
+}
+
+/** 把一个文本节点按边界切成 [text, span, text, …]；没有边界时返回 null。 */
+function hwsSplit(value) {
+  const cuts = [];
+  for (const re of [RE_CJK_LTN, RE_LTN_CJK]) {
+    re.lastIndex = 0;
+    let m;
+    // 每次只前进一格而非跳过整个匹配，"中A中" 这类连续边界才不会漏掉后一个
+    while ((m = re.exec(value)) !== null) {
+      cuts.push(m.index + 1);
+      re.lastIndex = m.index + 1;
+    }
+  }
+  if (cuts.length === 0) return null;
+  cuts.sort((a, b) => a - b);
+
+  const out = [];
+  let prev = 0;
+  for (const c of cuts) {
+    if (c <= prev) continue;
+    out.push(txt(value.slice(prev, c)));
+    out.push(el('span', { className: ['hws'] }));
+    prev = c;
+  }
+  out.push(txt(value.slice(prev)));
+  return out;
+}
+
+export function rehypeCjkSpacing() {
+  return (tree) => {
+    const walk = (node) => {
+      if (!node || !Array.isArray(node.children)) return;
+      for (let i = 0; i < node.children.length; i++) {
+        const c = node.children[i];
+        if (c.type === 'text') {
+          const parts = hwsSplit(c.value);
+          if (parts) {
+            node.children.splice(i, 1, ...parts);
+            i += parts.length - 1; // 跳过刚插入的节点，保证单趟幂等
+          }
+          continue;
+        }
+        if (c.type !== 'element' || hwsSkipped(c)) continue;
+        walk(c);
+      }
+    };
+    walk(tree);
+  };
+}
