@@ -1,18 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { gitDateFor } from './gitdates.mjs';
 
 export function resolveDate(entry: { collection: string; id: string; data?: { date?: string } }): string {
   const fmDate = entry.data?.date;
   if (fmDate && fmDate.trim()) return fmDate;
 
-  const filePath = path.join(
-    process.cwd(), 'src', 'content', entry.collection,
-    entry.id
-  );
-  try { return fs.statSync(filePath).birthtime.toISOString().split('T')[0]; } catch {
-    try {
-      return fs.statSync(filePath.replace(/\.md$/, '.mdx')).birthtime.toISOString().split('T')[0];
-    } catch { return ''; }
+  // entry.id 带 .md 后缀（legacy content collections），且用正斜杠——与 git 的路径形式一致
+  const repoRel = `src/content/${entry.collection}/${entry.id}`;
+  const fromGit = gitDateFor(repoRel);
+  if (fromGit) return fromGit;
+
+  // 兜底：不在 git 仓库里时退回文件创建时间
+  const filePath = path.join(process.cwd(), 'src', 'content', entry.collection, entry.id);
+  try {
+    return fs.statSync(filePath).birthtime.toISOString().split('T')[0];
+  } catch {
+    return '';
   }
 }
 

@@ -19,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # git log 要看到完整历史才能给每个文件算出真实的最后提交时间；
+          # 默认的 fetch-depth: 1 会让所有文件共享同一个 commit 时间。
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'

@@ -3,3 +3,6 @@ dist/
 .DS_Store
 *.log
 .backup/
+
+# SDD 工作区（脚本产物，不进仓库）
+.superpowers/
