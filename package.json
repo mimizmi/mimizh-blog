@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "clean": "rm -rf dist",
     "check": "astro check",
-    "check:dates": "node scripts/checks/git-dates.mjs"
+    "check:dates": "node scripts/checks/git-dates.mjs",
+    "verify:dist": "node scripts/verify-dist.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

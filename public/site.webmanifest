@@ -1,0 +1,13 @@
+{
+  "name": "mimizh",
+  "short_name": "mimizh",
+  "description": "个人笔记站 — 计算机图形学、数据库、分布式系统、游戏开发的学习记录。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0e0d",
+  "theme_color": "#0f0e0d",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

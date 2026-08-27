@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="页面不存在" description="找不到这个页面。">
+  <div class="main main-col">
+    <div class="home-wrap fu">
+      <h1 class="home-name">404</h1>
+      <p class="home-p">这个地址下没有内容。可能是笔记改了路径，也可能是链接抄漏了一段。</p>
+      <hr class="home-hr" />
+      <div class="home-sec">试试</div>
+      <button class="home-link" id="btn-404-search" type="button"
+              style="border:none;background:none;cursor:pointer;text-align:left;width:100%">
+        <span class="home-link-ic">⌕</span>搜索全站（或按 ⌘K）
+      </button>
+      <a href="/notes/" class="home-link"><span class="home-link-ic">→</span>浏览笔记</a>
+      <a href="/" class="home-link"><span class="home-link-ic">→</span>回到首页</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  // 复用 BaseLayout 已有的搜索浮层，不新增逻辑
+  document.addEventListener('astro:page-load', () => {
+    const btn = document.getElementById('btn-404-search');
+    if (btn) btn.addEventListener('click', () => document.getElementById('btn-search')?.click());
+  });
+</script>
