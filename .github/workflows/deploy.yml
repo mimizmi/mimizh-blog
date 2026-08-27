@@ -30,6 +30,8 @@ jobs:
       - run: npm ci
       # frontmatter / 类型出错时直接让 CI 红，而不是静默产出空白页
       - run: npm run check
+      # fetch-depth 一旦被后续修改回默认值（浅克隆），这一步会立刻让 CI 红
+      - run: npm run check:dates
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

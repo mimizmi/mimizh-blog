@@ -11,13 +11,16 @@ let cache = null;
  * --name-only 让每个 commit 后跟它触及的文件；git log 从新到旧输出，
  * 所以每个文件第一次出现时就是它的最后一次提交。
  * 用 %x00 前缀把时间行和文件名行区分开——文件路径里不可能出现 NUL。
+ * -c core.quotepath=false：默认 git 会把非 ASCII 路径转成带引号的八进制转义
+ * （如中文文件名），关掉之后 --name-only 才会原样吐出 UTF-8 路径，跟仓库相对
+ * POSIX 路径对得上。
  */
 export function getGitDates() {
   if (cache) return cache;
   const map = new Map();
   let out = '';
   try {
-    out = execFileSync('git', ['log', '--format=%x00%aI', '--name-only', '--no-renames'], {
+    out = execFileSync('git', ['-c', 'core.quotepath=false', 'log', '--format=%x00%aI', '--name-only', '--no-renames'], {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
     });
