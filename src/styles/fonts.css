@@ -20,7 +20,7 @@
 /* ── 输入框回退 ───────────────────────────────────────────
    子集只覆盖站内出现过的字。用户在搜索框里敲的字未必在其中，
    用子集字体会出豆腐块，所以输入类元素一律走系统字体。 */
-.search-in,
-.tree-filter {
+input.search-in,
+input.tree-filter {
   font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
