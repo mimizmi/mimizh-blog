@@ -141,9 +141,7 @@ type GetReply struct {
     Version Tversion
     Err     Err
 }
-```
 
-```go
 //client.go
 package kvsrv
 import (
@@ -161,9 +159,7 @@ func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
 }
 func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
 }
-```
 
-```go
 //server.go
 package kvsrv
 
