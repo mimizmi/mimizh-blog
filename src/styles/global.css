@@ -1,7 +1,7 @@
 /* ── Design System: Dark Literary + Light Paper ──── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --fh:'Lora',Georgia,serif;--fb:'Source Serif 4',Georgia,serif;--fm:'JetBrains Mono',monospace;
+  --fh:'Lora Variable','Noto Serif SC Subset',Georgia,serif;--fb:'Source Serif 4 Variable','Noto Serif SC Subset',Georgia,serif;--fm:'JetBrains Mono Variable','Noto Sans SC Subset',monospace;
   --nav-h:50px;--sb:236px;--toc:196px;
   --fs-body:1;--fs-ui:1;--content-width:760px;
   --ease:cubic-bezier(.32,.72,0,1);

@@ -42,4 +42,21 @@ c.check('首页 head 引用了 favicon 与 manifest', () => {
   assert(html.includes('/site.webmanifest'), '首页没有引用 /site.webmanifest');
 });
 
+// ── 外域 ──
+c.check('产物 HTML 不含任何外域引用', () => {
+  const BANNED = ['googleapis.com', 'gstatic.com', 'jsdelivr.net'];
+  const hits = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) { walk(p); continue; }
+      if (!e.name.endsWith('.html')) continue;
+      const html = fs.readFileSync(p, 'utf8');
+      for (const b of BANNED) if (html.includes(b)) hits.push(`${p} → ${b}`);
+    }
+  };
+  walk(DIST);
+  assert(hits.length === 0, `有 ${hits.length} 处外域引用：\n      ` + hits.slice(0, 5).join('\n      '));
+});
+
 c.report();
