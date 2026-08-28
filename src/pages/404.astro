@@ -17,12 +17,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <a href="/" class="home-link"><span class="home-link-ic">→</span>回到首页</a>
     </div>
   </div>
-</BaseLayout>
 
-<script is:inline>
-  // 复用 BaseLayout 已有的搜索浮层，不新增逻辑
-  document.addEventListener('astro:page-load', () => {
-    const btn = document.getElementById('btn-404-search');
-    if (btn) btn.addEventListener('click', () => document.getElementById('btn-search')?.click());
-  });
-</script>
+  <script is:inline>
+    // 复用 BaseLayout 已有的搜索浮层，不新增逻辑
+    document.addEventListener('astro:page-load', () => {
+      const btn = document.getElementById('btn-404-search');
+      if (btn) btn.addEventListener('click', () => document.getElementById('btn-search')?.click());
+    });
+  </script>
+</BaseLayout>
