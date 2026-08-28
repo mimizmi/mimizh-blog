@@ -52,7 +52,7 @@ if (sections.length === 0 && bodyText.trim()) {
 }
 ---
 
-<BaseLayout title={`${project.data.title} · 项目`} activeNav="projects" breadcrumbs={breadcrumbs} accent={STATUS_COLORS[node.status || ""] || "var(--project)"} ogType="article" description={node.tagline || `${project.data.title} — 项目文档`}>
+<BaseLayout title={`${project.data.title} · 项目`} activeNav="projects" breadcrumbs={breadcrumbs} accent={STATUS_COLORS[node.status || ""] || "var(--project)"} ogType="article" ogImage={`/og/projects/${node.segments.join('/')}.png`} description={node.tagline || `${project.data.title} — 项目文档`}>
   <div class="main">
     <div class="docs-sb" data-pagefind-ignore>
       <div class="docs-sb-logo">

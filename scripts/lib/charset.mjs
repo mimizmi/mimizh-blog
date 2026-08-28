@@ -20,6 +20,18 @@ function isTarget(cp) {
   );
 }
 
+/** 站点 woff2 子集只收 CJK：它在字体栈里是"CJK 兜底"角色，拉丁字符本来就该走
+ * 栈里前面那款拉丁字体，浏览器按字形自动切换。但 OG 卡片图不一样——satori
+ * 没有浏览器那套按字形回退机制，一张卡片只装两款字体（OG Serif / OG Sans），
+ * 标题、分类、页脚里任何一个非 CJK 字符（英文字母、数字、下划线、空格、
+ * 省略号……）只要不在子集里，画出来就是空 path，卡片上这一整块文字直接消失。
+ * 所以 OG 分支要收"全部可打印字符"，不能只收 CJK。 */
+function isPrintable(cp) {
+  if (cp < 0x20) return false; // 控制字符（含换行、制表符）
+  if (cp >= 0x7f && cp <= 0x9f) return false; // DEL + C1 控制字符
+  return true;
+}
+
 function walk(target, acc) {
   const st = fs.statSync(target);
   if (st.isFile()) {
@@ -32,16 +44,28 @@ function walk(target, acc) {
   }
 }
 
-/** @returns {number[]} 升序去重的十进制码点 */
-export function collectCodepoints() {
+function collect(predicate) {
   const files = [];
   for (const r of ROOTS) if (fs.existsSync(r)) walk(r, files);
   const set = new Set();
   for (const f of files) {
     for (const ch of fs.readFileSync(f, 'utf8')) {
       const cp = ch.codePointAt(0);
-      if (isTarget(cp)) set.add(cp);
+      if (predicate(cp)) set.add(cp);
     }
   }
   return [...set].sort((a, b) => a - b);
+}
+
+/** 站点 woff2 子集用：仅 CJK 区段。@returns {number[]} 升序去重的十进制码点 */
+export function collectCodepoints() {
+  return collect(isTarget);
+}
+
+/** OG 卡片字体用：CJK + 全部可打印字符（同一批源文件里出现的拉丁字母、
+ * 数字、标点等），因为 og-card.ts 的标题/分类/页脚文案和 [...slug].png.ts
+ * 里 'Wiki'、'项目' 这类硬编码字符串都在 src/ 范围内，与这里扫描的文件集合
+ * 天然重合。@returns {number[]} 升序去重的十进制码点 */
+export function collectOgCodepoints() {
+  return collect(isPrintable);
 }
