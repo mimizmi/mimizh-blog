@@ -55,7 +55,7 @@ In parctice, we want the server to remain as simple and efficient as possible, d
 
 Here is how to use server-side CAS feature to make a client-side lock.
 
-```go
+```go wrap
 // before sending the actual operations. we need to use Put and Get 
 // Acquire and Release the lock. lock state as the key, client id as the value.
 func (lk *Lock) Acquire() {
@@ -111,7 +111,7 @@ func (lk *Lock) Release() {
 
 ## Skeleton code
 
-```go
+```go wrap
 //rpc.go
 package rpc
 type Err string
@@ -185,3 +185,51 @@ func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
 func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
 }
 ```
+
+```go wrap
+//client.go
+package kvsrv
+import (
+    "6.5840/kvsrv1/rpc"
+)
+type Clerk struct {
+    clnt   *tester.Clnt
+    server string
+}
+func MakeClerk(clnt *tester.Clnt, server string) kvtest.IKVClerk {
+    ck := &Clerk{clnt: clnt, server: server}
+    return ck
+}
+func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
+}
+func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
+}
+```
+
+```go wrap
+//server.go
+package kvsrv
+
+import (
+    "sync"
+    "6.5840/kvsrv1/rpc"
+)
+type KVServer struct {
+    mu sync.Mutex
+    data map[string]KValue
+}
+type KValue struct {
+    Value   string
+    Version rpc.Tversion
+}
+func MakeKVServer() *KVServer {
+    kv := &KVServer{}
+    kv.data = make(map[string]KValue)
+    return kv
+}
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+}
+func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
+}
+```
+
