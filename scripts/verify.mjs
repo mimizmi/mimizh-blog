@@ -26,11 +26,16 @@ c.check('字体子集覆盖了全部站内 CJK 字符', () => {
 });
 
 c.check('子集字体文件存在且体积合理', () => {
+  // 健康产物在 150–350KB；50KB 的老阈值挡不住「子集掉了大半字形」这类退化输出
+  const MIN_SIZE = 100 * 1024;
   for (const f of ['noto-serif-sc-subset.woff2', 'noto-sans-sc-subset.woff2']) {
     const p = path.join('public', 'fonts', f);
     assert(fs.existsSync(p), `缺少 public/fonts/${f}`);
     const size = fs.statSync(p).size;
-    assert(size > 50 * 1024, `public/fonts/${f} 只有 ${size} 字节，疑似生成失败`);
+    assert(
+      size > MIN_SIZE,
+      `public/fonts/${f} 只有 ${size} 字节（阈值 ${MIN_SIZE} 字节），疑似生成失败`
+    );
   }
 });
 

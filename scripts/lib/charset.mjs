@@ -4,8 +4,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-/** 扫描哪些目录/文件。UI 文案在 astro/ts 里，正文在 md 里，两边都要覆盖。 */
-const ROOTS = ['src/content', 'src/pages', 'src/components', 'src/layouts', 'src/config.ts'];
+/** 扫描哪些目录/文件。整个 src/ 一把扫——显式目录清单曾经漏掉 src/plugins/，
+ * 让插件里硬编码的中文标签（callout 类型名、表格 aria-label）逃过覆盖率检查。 */
+const ROOTS = ['src'];
 const EXTS = new Set(['.md', '.astro', '.ts', '.mjs']);
 const SKIP_DIRS = new Set(['.obsidian', 'node_modules']);
 
