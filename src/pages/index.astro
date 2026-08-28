@@ -49,10 +49,21 @@ const latest = recent.slice(0, 6);
 
 // ── 板块概览 ──
 const countOf = (nodes: TreeNode[]) => flattenNodes(nodes).filter((n) => !n.isDraft).length;
+// 标签数按小写归组后去重，与 /tags/ 页的口径一致，否则首页显示 21、
+// 点进去看到 20 这种对不上的情况。
+const tagCount = new Set(
+  [noteTree, wikiTree, projectTree]
+    .flatMap(t => flattenNodes(t))
+    .filter(n => !n.isDraft)
+    .flatMap(n => (n.tags || []).map(t => t.trim().toLowerCase()))
+    .filter(Boolean)
+).size;
+
 const sections = [
   { label: '笔记', href: '/notes/', count: countOf(noteTree), color: 'var(--sec)' },
   { label: '项目', href: '/projects/', count: countOf(projectTree), color: 'var(--tech)' },
   { label: 'Wiki', href: '/wiki/', count: countOf(wikiTree), color: 'var(--wiki)' },
+  { label: '标签', href: '/tags/', count: tagCount, color: 'var(--reading)' },
 ];
 ---
 

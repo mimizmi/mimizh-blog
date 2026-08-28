@@ -5,6 +5,7 @@ import Sidebar from '../../components/Sidebar.astro';
 import { buildNoteTree, findNode, getAncestors, getFolderColor } from '../../utils/tree';
 import { getBacklinksFor } from '../../utils/backlinks';
 import type { TreeNode } from '../../utils/tree';
+import { tagHref } from '../../utils/tags';
 
 export async function getStaticPaths() {
   const tree = await buildNoteTree();
@@ -144,7 +145,7 @@ if (isNote && node.note) {
                     <div class="fe">{n.note?.data.description || ''}</div>
                     {n.tags && n.tags.length > 0 && (
                       <div style="display:flex;gap:.2rem;flex-wrap:wrap;margin-top:.35rem">
-                        {n.tags.map(t => <span class="proj-tag" style="font-size:calc(.58rem * var(--fs-ui))">{t}</span>)}
+                        {n.tags.map(t => <a class="proj-tag" href={tagHref(t)} style="font-size:calc(.58rem * var(--fs-ui))">{t}</a>)}
                       </div>
                     )}
                   </div>
@@ -176,7 +177,7 @@ if (isNote && node.note) {
             </div>
             {node.tags && node.tags.length > 0 && (
               <div style="display:flex;gap:.28rem;flex-wrap:wrap;margin-top:.6rem">
-                {node.tags.map(t => <span class="proj-tag">{t}</span>)}
+                {node.tags.map(t => <a class="proj-tag" href={tagHref(t)}>{t}</a>)}
               </div>
             )}
             <div class="doc-body">

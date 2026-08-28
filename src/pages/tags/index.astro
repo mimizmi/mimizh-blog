@@ -1,0 +1,131 @@
+---
+// ── 标签浏览页 ────────────────────────────────────────────
+// 取数与 rss.xml.ts / og endpoint 同一套：先建树再 flattenNodes，不用
+// getCollection。建树会填充 tree.ts 的 colorRegistry，绕开它 getFolderColor
+// 会落到 hashStr 兜底分支，配色与站内对不上。
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  buildNoteTree, buildWikiTree, buildProjectTree, flattenNodes, getFolderColor,
+} from '../../utils/tree';
+import type { TreeNode } from '../../utils/tree';
+import { tagSlug } from '../../utils/tags';
+
+interface TagEntry {
+  title: string;
+  href: string;
+  date: string;
+  section: string;
+  color: string;
+}
+
+const [noteTree, wikiTree, projectTree] = await Promise.all([
+  buildNoteTree(), buildWikiTree(), buildProjectTree(),
+]);
+
+// 草稿不进标签页，与 RSS 和首页「最近更新」口径一致
+const collect = (
+  nodes: TreeNode[],
+  base: string,
+  meta: (n: TreeNode) => { section: string; color: string },
+): { node: TreeNode; entry: TagEntry }[] =>
+  flattenNodes(nodes)
+    .filter((n) => !n.isDraft)
+    .map((n) => ({
+      node: n,
+      entry: {
+        title: n.label,
+        href: `${base}${n.segments.join('/')}/`,
+        date: n.resolvedDate || '',
+        ...meta(n),
+      },
+    }));
+
+const all = [
+  ...collect(noteTree, '/notes/', (n) => ({
+    section: n.segments[0] || '笔记',
+    color: getFolderColor(n.segments.slice(0, -1).join('/')),
+  })),
+  ...collect(wikiTree, '/wiki/', () => ({ section: 'Wiki', color: 'var(--wiki)' })),
+  ...collect(projectTree, '/projects/', () => ({ section: '项目', color: 'var(--project)' })),
+];
+
+// ── 归组 ──────────────────────────────────────────────────
+// 大小写不统一（内容里同时有 Rust / cpp、Virtual-Machine / distributed-systems），
+// 所以按小写归组，显示时取出现次数最多的那种原始写法。
+interface TagGroup { display: string; entries: TagEntry[]; casings: Map<string, number> }
+const groups = new Map<string, TagGroup>();
+let untagged = 0;
+
+for (const { node, entry } of all) {
+  const tags = node.tags || [];
+  if (tags.length === 0) { untagged++; continue; }
+  for (const raw of tags) {
+    const t = raw.trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    let g = groups.get(key);
+    if (!g) { g = { display: t, entries: [], casings: new Map() }; groups.set(key, g); }
+    g.casings.set(t, (g.casings.get(t) || 0) + 1);
+    // 同一条目重复写了同一个标签时不重复计入
+    if (!g.entries.some((e) => e.href === entry.href)) g.entries.push(entry);
+  }
+}
+
+for (const g of groups.values()) {
+  g.display = [...g.casings.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  g.entries.sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
+}
+
+const tagList = [...groups.values()].sort(
+  (a, b) => b.entries.length - a.entries.length || a.display.localeCompare(b.display)
+);
+const totalTagged = all.length - untagged;
+---
+
+<BaseLayout
+  title="标签"
+  description={`按标签浏览全站内容，共 ${tagList.length} 个标签、${totalTagged} 篇条目。`}
+>
+  <div class="main main-col">
+    <div class="page fu">
+      <div class="ph">
+        <div class="pt">标签</div>
+        <div class="pd">{tagList.length} 个标签 · {totalTagged} 篇已打标签{untagged > 0 ? ` · 另有 ${untagged} 篇未打标签` : ''}</div>
+      </div>
+
+      {tagList.length > 0 && (
+        <div class="tag-cloud">
+          {tagList.map(g => (
+            <a class="tag-chip" href={`#${tagSlug(g.display)}`}>
+              {g.display}<span class="tag-chip-n">{g.entries.length}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {tagList.map(g => (
+        <section class="tag-sec" id={tagSlug(g.display)}>
+          <h2 class="tag-sec-h">
+            <span class="tag-sec-name">{g.display}</span>
+            <span class="tag-sec-n">{g.entries.length}</span>
+          </h2>
+          <div class="fl">
+            {g.entries.map(e => (
+              <a class="fr" href={e.href}>
+                <div>
+                  <div class="fn">{e.title}</div>
+                  <div class="fe" style={`color:${e.color}`}>{e.section}</div>
+                </div>
+                <div class="fm-col"><div class="fd">{e.date}</div></div>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {tagList.length === 0 && (
+        <p class="pd">还没有任何内容打过标签。在 frontmatter 里写 <code>tags: [foo, bar]</code> 就会出现在这里。</p>
+      )}
+    </div>
+  </div>
+</BaseLayout>

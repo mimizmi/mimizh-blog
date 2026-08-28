@@ -5,6 +5,22 @@ import sitemap from '@astrojs/sitemap';
 import astroExpressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 import {
+  pluginCollapsibleSections,
+  pluginCollapsibleSectionsTexts,
+} from '@expressive-code/plugin-collapsible-sections';
+
+// 折叠区的 summary 文案默认是英文的 "N collapsed lines"，站内其它 UI（callout
+// 标签、导航）都是中文，这里补一份 zh-CN 并把 defaultLocale 指过去。
+pluginCollapsibleSectionsTexts.addLocale('zh-CN', {
+  collapsedLines: '已折叠 {lineCount} 行',
+});
+
+// 注：代码框自带的 "Copy to clipboard" / "Terminal window" 没能一并汉化。
+// pluginFramesTexts.addLocale() 在这里无效——Astro 用 esbuild 打包本配置文件，
+// 我们 import 到的 pluginFramesTexts 与 expressive-code 内部构造 frames 插件时
+// 用的不是同一个模块实例。折叠插件之所以能汉化，是因为它的实例由本文件亲手
+// 构造，改的就是同一个对象。这两句英文是插件默认值，与本次改动无关。
+import {
   rehypeTableWrap,
   rehypeCallouts,
   rehypeHeadingAnchors,
@@ -38,6 +54,7 @@ export default defineConfig({
       themes: ['github-light', 'github-dark'],
       themeCssSelector: (theme) => `[data-theme="${theme.type}"]`,
       useDarkModeMediaQuery: false,
+      defaultLocale: 'zh-CN',
       styleOverrides: {
         borderRadius: '6px',
         borderColor: 'var(--bd)',
@@ -56,6 +73,10 @@ export default defineConfig({
           showLineNumbers: true,
           startLineNumber: 1,
         }),
+        // 版本必须与 astro-expressive-code 对齐（都是 0.41.7）。装 ^0.44 会把
+        // @expressive-code/core 的第二份副本嵌套装进来，插件就注册到了另一个
+        // core 实例上——不报错，只是静默失效。
+        pluginCollapsibleSections(),
       ],
     }),
     sitemap({
