@@ -30,14 +30,15 @@
     "astro-expressive-code": "^0.41.7",
     "github-slugger": "^2.0.0",
     "katex": "^0.16.21",
-    "mermaid": "^11.17.0",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "typescript": "^5.7.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "mermaid": "^11.17.0",
     "pagefind": "^1.5.2",
+    "playwright": "^1.62.1",
     "subset-font": "^2.6.0"
   }
 }

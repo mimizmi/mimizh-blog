@@ -453,35 +453,5 @@ const navItems = [
     bindPage();
   })();
   </script>
-
-  <script>
-    // Mermaid：仅当页面存在图表时才动态载入（Vite 会单独分包）
-    let mermaidLib: typeof import('mermaid').default | null = null;
-    async function renderMermaid() {
-      const nodes = Array.from(document.querySelectorAll<HTMLElement>('pre.mermaid'));
-      if (!nodes.length) return;
-      if (!mermaidLib) mermaidLib = (await import('mermaid')).default;
-      const mm = mermaidLib;
-      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      mm.initialize({
-        startOnLoad: false,
-        theme: dark ? 'dark' : 'neutral',
-        securityLevel: 'strict',
-        fontFamily: 'var(--fm)',
-      });
-      // 主题切换后需要用原始源码重绘
-      for (const n of nodes) {
-        n.removeAttribute('data-processed');
-        n.textContent = n.getAttribute('data-src') || n.textContent;
-      }
-      try {
-        await mm.run({ nodes });
-      } catch (e) {
-        console.error('[mermaid]', e);
-      }
-    }
-    document.addEventListener('astro:page-load', renderMermaid);
-    document.addEventListener('mz:theme', renderMermaid);
-  </script>
 </body>
 </html>
