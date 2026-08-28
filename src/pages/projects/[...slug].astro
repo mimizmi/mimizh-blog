@@ -3,6 +3,7 @@ import { slug } from 'github-slugger';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { buildProjectTree, findNode, getAncestors, STATUS_COLORS } from '../../utils/tree';
 import type { TreeNode } from '../../utils/tree';
+import { tagHref } from '../../utils/tags';
 
 export async function getStaticPaths() {
   const tree = await buildProjectTree();
@@ -70,7 +71,7 @@ if (sections.length === 0 && bodyText.trim()) {
         <>
           <div class="docs-sb-sec">标签</div>
           <div style="padding:.18rem 1rem .5rem;display:flex;gap:.28rem;flex-wrap:wrap">
-            {node.tags.map(t => <span class="proj-tag">{t}</span>)}
+            {node.tags.map(t => <a class="proj-tag" href={tagHref(t)}>{t}</a>)}
           </div>
         </>
       )}
