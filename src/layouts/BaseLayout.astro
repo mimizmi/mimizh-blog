@@ -102,6 +102,12 @@ const navItems = [
 </head>
 <body style={accent ? `--sec:${accent}` : undefined}>
   <div class="pbar" id="pbar" style="width:0"></div>
+  {/* 「上次读到这里」提示条。只在有 .doc-body 的内容详情页由脚本唤出，
+      默认隐藏；不自动跳转，点了才跳。 */}
+  <div class="resume" id="resume" hidden data-pagefind-ignore>
+    <button class="resume-go" id="resume-go" type="button"></button>
+    <button class="resume-x" id="resume-x" type="button" title="不再提示" aria-label="关闭">×</button>
+  </div>
   <div class="app">
     <nav class="nav" data-pagefind-ignore>
       {hasSidebar && <button class="nav-ic nav-menu" id="btn-menu" title="目录" aria-label="打开目录">☰</button>}
@@ -314,6 +320,7 @@ const navItems = [
     function bindPage() {
       if (D.body.dataset.mzBound) return;
       D.body.dataset.mzBound = '1';
+      scrolledOnce = false;
 
       applyBase(num('base', defaults.base));
       applyBody(num('body', defaults.body));
@@ -396,6 +403,72 @@ const navItems = [
       });
 
       updateProgress();
+      offerResume();
+    }
+
+    // ── 阅读位置记忆 ──────────────────────────────────────
+    // 只在内容详情页（有 .doc-body）生效。存的是滚动百分比而不是像素，
+    // 这样改字号、换窗口宽度之后回来仍然落在同一段文字上。
+    // localStorage 在隐私模式下会直接抛，所有读写都包 try/catch。
+    var RESUME_KEY = 'mz-read:';
+    var RESUME_MIN = 5;   // 刚开头，不值得提示
+    var RESUME_MAX = 95;  // 基本读完了，清掉记录
+    var resumeSaveAt = 0;
+    // 只有用户真的滚动过才记位置。bindPage() 里 updateProgress() 先于
+    // offerResume() 跑，若那一次就落盘，会在 scrollY=0 时把记录当成
+    // 「才刚开头」删掉，提示条永远出不来。
+    var scrolledOnce = false;
+
+    function isArticle() { return !!D.querySelector('.doc-body'); }
+    function resumeKey() { return RESUME_KEY + location.pathname; }
+    function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+    function saveReadPos(pct) {
+      if (!scrolledOnce || !isArticle()) return;
+      var now = Date.now();
+      if (now - resumeSaveAt < 700) return;  // 别每帧都写
+      resumeSaveAt = now;
+      if (pct >= RESUME_MAX || pct < RESUME_MIN) lsDel(resumeKey());
+      else lsSet(resumeKey(), String(Math.round(pct)));
+    }
+
+    function hideResume() {
+      var box = $('resume');
+      if (box) box.hidden = true;
+    }
+
+    function offerResume() {
+      var box = $('resume'), go = $('resume-go');
+      if (!box || !go) return;
+      box.hidden = true;
+      if (!isArticle()) return;
+      var pct = parseInt(lsGet(resumeKey()) || '', 10);
+      if (!(pct > RESUME_MIN && pct < RESUME_MAX)) return;
+      // 已经滚到那儿了（浏览器自己恢复了位置）就不必提示
+      var h = D.documentElement.scrollHeight - window.innerHeight;
+      if (h > 0 && Math.abs((window.scrollY / h) * 100 - pct) < 3) return;
+      go.textContent = '上次读到 ' + pct + '% · 跳回';
+      box.hidden = false;
+    }
+
+    if (!window.__mzResumeHook) {
+      window.__mzResumeHook = 1;
+      D.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.id) return;
+        if (t.id === 'resume-go') {
+          var h = D.documentElement.scrollHeight - window.innerHeight;
+          var pct = parseInt(lsGet(resumeKey()) || '0', 10);
+          var smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.scrollTo({ top: (h * pct) / 100, behavior: smooth ? 'smooth' : 'auto' });
+          hideResume();
+        } else if (t.id === 'resume-x') {
+          lsDel(resumeKey());
+          hideResume();
+        }
+      });
     }
 
     // ── 滚动：阅读进度 + 目录高亮 ──
@@ -403,7 +476,9 @@ const navItems = [
     function updateProgress() {
       var bar = $('pbar');
       var h = D.documentElement.scrollHeight - window.innerHeight;
-      if (bar) bar.style.width = h > 0 ? Math.min(100, (window.scrollY / h) * 100) + '%' : '0';
+      var pct = h > 0 ? Math.min(100, (window.scrollY / h) * 100) : 0;
+      if (bar) bar.style.width = h > 0 ? pct + '%' : '0';
+      saveReadPos(pct);
 
       var lis = D.querySelectorAll('.toc-li');
       if (lis.length) {
@@ -422,6 +497,7 @@ const navItems = [
       ticking = false;
     }
     function onScroll() {
+      scrolledOnce = true;
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(updateProgress);

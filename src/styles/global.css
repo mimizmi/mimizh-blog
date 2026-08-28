@@ -481,7 +481,7 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
 
 /* 打印 */
 @media print{
-  .nav,.sb,.sb-scrim,.doc-toc-col,.docs-sb,.docs-toc,.pbar,.settings-panel,.search-ov,body::before{display:none!important}
+  .nav,.sb,.sb-scrim,.doc-toc-col,.docs-sb,.docs-toc,.pbar,.resume,.settings-panel,.search-ov,body::before{display:none!important}
   .doc-main,.docs-main{max-width:none;padding:0}
   .doc-body .table-wrap{overflow:visible;break-inside:avoid;width:auto!important;margin-left:0!important;margin-right:0!important}
   .doc-body a{text-decoration:none}
@@ -568,3 +568,14 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
 /* 详情页里的标签芯片变成可点链接后，去掉链接默认色，保留原样式 */
 a.proj-tag{text-decoration:none;color:inherit;transition:border-color .18s,color .18s}
 a.proj-tag:hover{border-color:var(--sec);color:var(--tx)}
+
+/* ── 「上次读到这里」提示条 ── */
+.resume{position:fixed;right:1rem;bottom:1rem;z-index:60;display:flex;align-items:stretch;gap:0;border:1px solid var(--bd2);border-radius:6px;background:var(--sf);box-shadow:0 4px 16px var(--sh);overflow:hidden;animation:resume-in .22s var(--ease)}
+.resume[hidden]{display:none}
+.resume-go{border:0;background:transparent;color:var(--tx);font-family:var(--fm);font-size:calc(.68rem * var(--fs-ui));padding:.5rem .7rem;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.resume-go:hover{background:var(--sf2);color:var(--sec)}
+.resume-x{border:0;border-left:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:.9rem;line-height:1;padding:0 .55rem;cursor:pointer}
+.resume-x:hover{background:var(--sf2);color:var(--tx)}
+@keyframes resume-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.resume{animation:none}}
+@media(max-width:640px){.resume{right:.6rem;bottom:.6rem}}
