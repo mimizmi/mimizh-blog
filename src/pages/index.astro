@@ -1,10 +1,59 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { buildNoteTree, buildWikiTree, buildProjectTree, flattenNodes, getFolderColor } from '../utils/tree';
+import type { TreeNode } from '../utils/tree';
 
 const homeEntries = await getCollection('home');
 const h = homeEntries[0]?.data || {};
 const bio = (h.bio as string || '').trim().split('\n').filter((p: string) => p.trim());
+
+const [noteTree, wikiTree, projectTree] = await Promise.all([
+  buildNoteTree(), buildWikiTree(), buildProjectTree(),
+]);
+
+// ── 最近更新：跨三个板块，按日期倒序取 6 条 ──
+// draft 口径与 rss.xml.ts 完全一致：flattenNodes 取叶子，再滤掉 isDraft。
+// 日期直接用树上的 resolvedDate（内部已调 Task 1 的 resolveDate）。
+interface Recent { title: string; href: string; date: string; label: string; color: string }
+
+const collect = (
+  nodes: TreeNode[],
+  base: string,
+  title: (n: TreeNode) => string,
+  meta: (n: TreeNode) => { label: string; color: string },
+): Recent[] =>
+  flattenNodes(nodes)
+    .filter((n) => !n.isDraft)
+    .map((n) => ({
+      title: title(n),
+      href: `${base}${n.segments.join('/')}/`,
+      date: n.resolvedDate || '',
+      ...meta(n),
+    }));
+
+const recent: Recent[] = [
+  ...collect(noteTree, '/notes/',
+    (n) => n.note?.data.title || n.name,
+    (n) => ({ label: n.segments[0] || '笔记', color: getFolderColor(n.segments.slice(0, -1).join('/')) })),
+  ...collect(wikiTree, '/wiki/',
+    (n) => n.wikiEntry?.data.title || n.name,
+    () => ({ label: 'Wiki', color: 'var(--wiki)' })),
+  ...collect(projectTree, '/projects/',
+    (n) => n.projectEntry?.data.title || n.name,
+    () => ({ label: '项目', color: 'var(--tech)' })),
+];
+
+recent.sort((a, b) => b.date.localeCompare(a.date));
+const latest = recent.slice(0, 6);
+
+// ── 板块概览 ──
+const countOf = (nodes: TreeNode[]) => flattenNodes(nodes).filter((n) => !n.isDraft).length;
+const sections = [
+  { label: '笔记', href: '/notes/', count: countOf(noteTree), color: 'var(--sec)' },
+  { label: '项目', href: '/projects/', count: countOf(projectTree), color: 'var(--tech)' },
+  { label: 'Wiki', href: '/wiki/', count: countOf(wikiTree), color: 'var(--wiki)' },
+];
 ---
 
 <BaseLayout title={h.name || 'mimizh'} activeNav="home">
@@ -13,6 +62,30 @@ const bio = (h.bio as string || '').trim().split('\n').filter((p: string) => p.t
       <h1 class="home-name">{h.greeting || `你好，我是 <em>${h.name || 'mimizh'}</em>`}</h1>
       {bio.map((p: string) => <p class="home-p">{p.trim()}</p>)}
       <hr class="home-hr" />
+
+      <div class="home-sec">最近更新</div>
+      <div class="home-recent">
+        {latest.map(r => (
+          <a class="home-recent-row" href={r.href}>
+            <span class="home-recent-dot" style={`background:${r.color}`}></span>
+            <span class="home-recent-title">{r.title}</span>
+            <span class="home-recent-meta">{r.label}</span>
+            <span class="home-recent-date">{r.date}</span>
+          </a>
+        ))}
+      </div>
+
+      <div class="home-sec">板块</div>
+      <div class="home-sections">
+        {sections.map(s => (
+          <a class="home-section-card" href={s.href} style={`--cc:${s.color}`}>
+            <span class="home-section-dot" style={`background:${s.color}`}></span>
+            <span class="home-section-label">{s.label}</span>
+            <span class="home-section-count">{s.count}</span>
+          </a>
+        ))}
+      </div>
+
       {h.work && <>
         <div class="home-sec">工作</div>
         <p class="home-p" style="font-size:.87rem">{h.work}</p>
@@ -21,6 +94,7 @@ const bio = (h.bio as string || '').trim().split('\n').filter((p: string) => p.t
       {h.email && <a href={`mailto:${h.email}`} class="home-link"><span class="home-link-ic">@</span>{h.email}</a>}
       {h.github && <a href={`https://github.com/${h.github}`} class="home-link" target="_blank" rel="noopener"><span class="home-link-ic">↗</span>GitHub · @{h.github}</a>}
       {h.twitter && <a href={`https://twitter.com/${h.twitter}`} class="home-link" target="_blank" rel="noopener"><span class="home-link-ic">↗</span>Twitter · @{h.twitter}</a>}
+      <a href="/rss.xml" class="home-link"><span class="home-link-ic">◈</span>RSS 订阅</a>
       <hr class="home-hr" />
       <p style="font-size:.74rem;color:var(--tx3);font-style:italic">{h.footer || '本站基于 mimizh-blog 构建，使用 Lora 与 Source Serif 4 字体。'}</p>
     </div>
