@@ -19,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # git log 要看到完整历史才能给每个文件算出真实的最后提交时间；
+          # 默认的 fetch-depth: 1 会让所有文件共享同一个 commit 时间。
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -26,7 +30,21 @@ jobs:
       - run: npm ci
       # frontmatter / 类型出错时直接让 CI 红，而不是静默产出空白页
       - run: npm run check
+      # 字体子集覆盖率护栏：写了新字忘了重跑 npm run fonts 时让 CI 红
+      - run: npm run verify
+      # fetch-depth 一旦被后续修改回默认值（浅克隆），这一步会立刻让 CI 红
+      - run: npm run check:dates
+      # mermaid 预渲染要用 headless chromium，但站内暂无图表时不必为此拖慢每次部署。
+      # playwright 包没有 postinstall，npm ci 不会带浏览器下来。
+      - name: 安装 chromium（仅当站内存在 mermaid 图表）
+        run: |
+          if grep -rq '```mermaid' src/content; then
+            npx playwright install --with-deps chromium
+          else
+            echo "站内无 mermaid 图表，跳过 chromium 安装"
+          fi
       - run: npm run build
+      - run: npm run verify:dist
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist

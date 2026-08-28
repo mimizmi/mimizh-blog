@@ -9,10 +9,10 @@ import {
   rehypeCallouts,
   rehypeHeadingAnchors,
   rehypeExternalLinks,
-  remarkMermaid,
   rehypeCjkSpacing,
 } from './src/plugins/markdown.mjs';
 import { remarkWikiLinks } from './src/plugins/wikilinks.mjs';
+import { remarkMermaidPrerender, mermaidPrerenderIntegration } from './src/plugins/mermaid-prerender.mjs';
 
 // Remark plugin: rewrite relative asset links (./assets/...) to absolute (/assets/...)
 // so they work both in Obsidian (relative) and on the deployed site (absolute).
@@ -61,10 +61,11 @@ export default defineConfig({
     sitemap({
       filter: (page) => !page.includes('/404'),
     }),
+    mermaidPrerenderIntegration(),
   ],
   markdown: {
     // remark 先跑：mermaid 要赶在 Expressive Code 之前把代码块摘出去
-    remarkPlugins: [remarkMermaid, remarkMath, remarkAssetLinks, remarkWikiLinks],
+    remarkPlugins: [remarkMermaidPrerender, remarkMath, remarkAssetLinks, remarkWikiLinks],
     rehypePlugins: [
       rehypeKatex,
       rehypeCallouts,

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mimizh.dpdns.org/sitemap-index.xml

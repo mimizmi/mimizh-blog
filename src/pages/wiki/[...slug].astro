@@ -88,6 +88,7 @@ const secEntries = ancestors.length > 0
   accent={sectionColor}
   hasSidebar={true}
   ogType={isNote ? 'article' : 'website'}
+  ogImage={isNote ? `/og/wiki/${node.segments.join('/')}.png` : undefined}
   description={isNote
     ? (entry?.data.description || `${pageTitle} — Wiki 条目`)
     : `${node.name} 分类下的 ${node.count} 条 Wiki 笔记`}

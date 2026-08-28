@@ -1,6 +1,8 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import { SITE } from '../config';
+import '../styles/fonts.ts';
+import '../styles/fonts.css';
 import '../styles/global.css';
 
 export interface Props {
@@ -15,6 +17,8 @@ export interface Props {
   description?: string;
   /** Open Graph 类型 */
   ogType?: 'website' | 'article';
+  /** OG 卡片图的站内绝对路径，例如 /og/notes/xxx.png */
+  ogImage?: string;
 }
 
 const {
@@ -25,6 +29,7 @@ const {
   hasSidebar = false,
   description = SITE.description,
   ogType = 'website',
+  ogImage,
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? SITE.url).href;
@@ -46,6 +51,10 @@ const navItems = [
   <meta name="description" content={description} />
   <meta name="author" content={SITE.author} />
   <link rel="canonical" href={canonical} />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#0f0e0d" />
   <link rel="alternate" type="application/rss+xml" title={`${SITE.title} RSS`} href="/rss.xml" />
   <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
   <meta property="og:type" content={ogType} />
@@ -54,23 +63,24 @@ const navItems = [
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonical} />
   <meta property="og:locale" content="zh_CN" />
-  <meta name="twitter:card" content="summary" />
+  {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site ?? SITE.url).href} />}
+  {ogImage && <meta property="og:image:width" content="1200" />}
+  {ogImage && <meta property="og:image:height" content="630" />}
+  <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
   <meta name="twitter:title" content={fullTitle} />
   <meta name="twitter:description" content={description} />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,300;1,8..60,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" />
+  {ogImage && <meta name="twitter:image" content={new URL(ogImage, Astro.site ?? SITE.url).href} />}
+  <link rel="preload" href="/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin />
   <ClientRouter />
   <script is:inline>
     // 字体预设表：拉丁字体在前（英文数字仍走原字体），汉字回退到 Noto，
     // 否则中文会掉进系统默认衬线（Windows 上是宋体，小字号发虚断笔）。
     // 只在这里定义一次，下方设置面板复用，避免两份表各改各的。
     window.__mzFontPresets = {
-      serif: { fh: "'Lora','Noto Serif SC',Georgia,serif", fb: "'Source Serif 4','Noto Serif SC',Georgia,serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" },
-      sans:  { fh: "'DM Sans','Noto Sans SC',system-ui,sans-serif", fb: "'Inter','Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" },
-      mono:  { fh: "'Space Mono','Noto Sans SC',monospace", fb: "'Atkinson Hyperlegible','Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" },
-      cn:    { fh: "'Noto Serif SC',Georgia,serif", fb: "'Noto Sans SC',system-ui,sans-serif", fm: "'JetBrains Mono','Noto Sans SC',monospace" }
+      serif: { fh: "'Lora Variable','Noto Serif SC Subset',Georgia,serif", fb: "'Source Serif 4 Variable','Noto Serif SC Subset',Georgia,serif", fm: "'JetBrains Mono Variable','Noto Sans SC Subset',monospace" },
+      sans:  { fh: "'DM Sans Variable','Noto Sans SC Subset',system-ui,sans-serif", fb: "'Inter Variable','Noto Sans SC Subset',system-ui,sans-serif", fm: "'JetBrains Mono Variable','Noto Sans SC Subset',monospace" },
+      mono:  { fh: "'Space Mono','Noto Sans SC Subset',monospace", fb: "'Atkinson Hyperlegible','Noto Sans SC Subset',system-ui,sans-serif", fm: "'JetBrains Mono Variable','Noto Sans SC Subset',monospace" },
+      cn:    { fh: "'Noto Serif SC Subset',Georgia,serif", fb: "'Noto Sans SC Subset',system-ui,sans-serif", fm: "'JetBrains Mono Variable','Noto Sans SC Subset',monospace" }
     };
     // 首屏绘制前应用偏好，避免闪白；换页后由 astro:after-swap 再次应用
     window.__mzPrefs = function () {
@@ -449,36 +459,6 @@ const navItems = [
 
     bindPage();
   })();
-  </script>
-
-  <script>
-    // Mermaid：仅当页面存在图表时才动态载入（Vite 会单独分包）
-    let mermaidLib: typeof import('mermaid').default | null = null;
-    async function renderMermaid() {
-      const nodes = Array.from(document.querySelectorAll<HTMLElement>('pre.mermaid'));
-      if (!nodes.length) return;
-      if (!mermaidLib) mermaidLib = (await import('mermaid')).default;
-      const mm = mermaidLib;
-      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      mm.initialize({
-        startOnLoad: false,
-        theme: dark ? 'dark' : 'neutral',
-        securityLevel: 'strict',
-        fontFamily: 'var(--fm)',
-      });
-      // 主题切换后需要用原始源码重绘
-      for (const n of nodes) {
-        n.removeAttribute('data-processed');
-        n.textContent = n.getAttribute('data-src') || n.textContent;
-      }
-      try {
-        await mm.run({ nodes });
-      } catch (e) {
-        console.error('[mermaid]', e);
-      }
-    }
-    document.addEventListener('astro:page-load', renderMermaid);
-    document.addEventListener('mz:theme', renderMermaid);
   </script>
 </body>
 </html>

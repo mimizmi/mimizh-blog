@@ -176,37 +176,7 @@ export function rehypeExternalLinks() {
   };
 }
 
-// ── 5. Mermaid 代码块 ─────────────────────────────────────
-// 在 remark 阶段就把 ```mermaid 换成 <pre class="mermaid">，
-// 这样 Expressive Code（rehype 阶段）不会把它当普通代码块高亮。
-// 原始图表源码另存到 data-src，便于切换主题后重新渲染。
-function escAttr(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-export function remarkMermaid() {
-  return (tree) => {
-    const walk = (node) => {
-      if (!node || !Array.isArray(node.children)) return;
-      for (let i = 0; i < node.children.length; i++) {
-        const c = node.children[i];
-        if (c.type === 'code' && (c.lang || '').toLowerCase() === 'mermaid') {
-          const src = escAttr(c.value || '');
-          node.children[i] = {
-            type: 'html',
-            value: `<div class="mermaid-wrap"><pre class="mermaid" data-src="${src}">${src}</pre></div>`,
-          };
-          continue;
-        }
-        walk(c);
-      }
-    };
-    walk(tree);
-  };
-}
-
-// ── 6. 中西文混排间隙 ─────────────────────────────────────
+// ── 5. 中西文混排间隙 ─────────────────────────────────────
 // 汉字与拉丁/数字相邻时插入一个空的 <span class="hws">，由 CSS 给出 1/8 em 的
 // 视觉间隙。插空元素而不是真空格：复制粘贴与 Pagefind 索引都拿不到多余字符。
 // CJK：汉字、假名、谚文。刻意不含 U+3000–303F 与全角形式——「。」「，」
@@ -216,7 +186,7 @@ const RE_LTN_CJK = /([A-Za-z0-9À-ɏ@#$%&\])}>])([⺀-⻿぀-ヿ㐀-䶿一-鿿�
 
 // 这些子树里的文字不参与：代码、公式、图表源码，加间隙只会改变语义或错位。
 const HWS_SKIP_TAGS = new Set(['code', 'pre', 'kbd', 'samp', 'var', 'script', 'style', 'svg', 'math', 'textarea']);
-const HWS_SKIP_CLASS = (c) => c === 'mermaid' || c === 'no-hws' || c.startsWith('katex');
+const HWS_SKIP_CLASS = (c) => c === 'no-hws' || c.startsWith('katex');
 
 function hwsSkipped(node) {
   if (HWS_SKIP_TAGS.has(node.tagName)) return true;

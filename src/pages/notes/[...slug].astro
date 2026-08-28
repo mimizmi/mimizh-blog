@@ -93,6 +93,7 @@ if (isNote && node.note) {
   accent={sectionColor}
   hasSidebar={true}
   ogType={isNote ? 'article' : 'website'}
+  ogImage={isNote ? `/og/notes/${node.segments.join('/')}.png` : undefined}
   description={isNote
     ? (noteEntry?.data.description || `${pageTitle} — ${node.segments.slice(0, -1).join(' / ')} 笔记`)
     : `${node.name} 目录下的 ${directNoteCount} 篇笔记`}

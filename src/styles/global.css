@@ -1,7 +1,7 @@
 /* ── Design System: Dark Literary + Light Paper ──── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --fh:'Lora',Georgia,serif;--fb:'Source Serif 4',Georgia,serif;--fm:'JetBrains Mono',monospace;
+  --fh:'Lora Variable','Noto Serif SC Subset',Georgia,serif;--fb:'Source Serif 4 Variable','Noto Serif SC Subset',Georgia,serif;--fm:'JetBrains Mono Variable','Noto Sans SC Subset',monospace;
   --nav-h:50px;--sb:236px;--toc:196px;
   --fs-body:1;--fs-ui:1;--content-width:760px;
   --ease:cubic-bezier(.32,.72,0,1);
@@ -533,11 +533,25 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
   border:1px solid var(--bd);border-radius:8px;background:var(--bg2);
   display:flex;justify-content:center;
 }
-.doc-body pre.mermaid{
-  border:none;background:none;margin:0;padding:0;font-family:var(--fm);
-  font-size:calc(.76rem * var(--fs-body));color:var(--tx3);
-  /* 渲染完成前先隐藏源码，避免闪一下文本 */
-  visibility:hidden;
-}
-.doc-body pre.mermaid[data-processed="true"]{visibility:visible}
-.doc-body pre.mermaid svg{max-width:100%;height:auto}
+
+/* ── 预渲染的 mermaid 图：两份 SVG 按主题显隐 ── */
+.mermaid-svg{display:none}
+[data-theme="light"] .mermaid-svg[data-mz-theme="light"],
+[data-theme="dark"] .mermaid-svg[data-mz-theme="dark"]{display:block}
+.mermaid-svg svg{max-width:100%;height:auto}
+
+/* ── 首页：最近更新与板块 ── */
+.home-recent{display:flex;flex-direction:column;gap:.1rem;margin:.3rem 0 1.1rem}
+.home-recent-row{display:grid;grid-template-columns:8px 1fr auto auto;align-items:center;gap:.6rem;padding:.42rem .5rem;border-radius:5px;text-decoration:none;color:inherit;transition:background .18s}
+.home-recent-row:hover{background:var(--sf)}
+.home-recent-dot{width:6px;height:6px;border-radius:50%}
+.home-recent-title{font-size:calc(.87rem * var(--fs-body));color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-recent-meta{font-size:calc(.66rem * var(--fs-ui));color:var(--tx3);font-family:var(--fm)}
+.home-recent-date{font-size:calc(.66rem * var(--fs-ui));color:var(--tx3);font-family:var(--fm);font-variant-numeric:tabular-nums}
+.home-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.5rem;margin:.3rem 0 1.1rem}
+.home-section-card{display:flex;align-items:center;gap:.45rem;padding:.6rem .7rem;border:1px solid var(--bd);border-radius:6px;text-decoration:none;color:inherit;transition:border-color .18s,background .18s}
+.home-section-card:hover{border-color:var(--cc);background:var(--sf)}
+.home-section-dot{width:7px;height:7px;border-radius:50%}
+.home-section-label{font-size:calc(.82rem * var(--fs-ui));color:var(--tx)}
+.home-section-count{margin-left:auto;font-size:calc(.7rem * var(--fs-ui));color:var(--tx3);font-family:var(--fm);font-variant-numeric:tabular-nums}
+@media(max-width:640px){.home-recent-row{grid-template-columns:8px 1fr auto}.home-recent-meta{display:none}}
