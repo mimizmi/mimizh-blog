@@ -6,3 +6,6 @@ dist/
 
 # SDD 工作区（脚本产物，不进仓库）
 .superpowers/
+
+# CJK 可变字体源文件，太大不进仓库；子集产物在 public/fonts/
+fonts/source/
