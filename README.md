@@ -140,6 +140,7 @@ footer: 页脚文字
 # 构建
 npm run build
 
+npm run fonts
 # 将 dist/ 推送到 gh-pages 分支
 # 或设置 GitHub Actions 自动部署
 ```
@@ -168,11 +169,11 @@ npm run build
 
 ## 技术栈
 
-| 项目 | 方案 |
-|------|------|
-| 框架 | Astro v5 |
-| Markdown | Content Collections + Zod |
-| 代码高亮 | Shiki (构建时) |
-| 数学公式 | KaTeX (remark-math + rehype-katex) |
-| 搜索 | 构建时 JSON 索引 |
-| 部署 | 纯静态 HTML |
+| 项目       | 方案                                 |
+| -------- | ---------------------------------- |
+| 框架       | Astro v5                           |
+| Markdown | Content Collections + Zod          |
+| 代码高亮     | Shiki (构建时)                        |
+| 数学公式     | KaTeX (remark-math + rehype-katex) |
+| 搜索       | 构建时 JSON 索引                        |
+| 部署       | 纯静态 HTML                           |
