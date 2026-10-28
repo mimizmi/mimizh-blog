@@ -71,7 +71,7 @@ export async function renderOgCard({ title, category, color }: OgCardOptions): P
                   type: 'div',
                   props: {
                     style: { fontSize: 26, color: '#a09b94', fontFamily: 'OG Sans' },
-                    children: 'mimizh.dpdns.org',
+                    children: 'mimizh.20250430.xyz',
                   },
                 },
               ],

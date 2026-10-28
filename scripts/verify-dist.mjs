@@ -25,7 +25,7 @@ c.check('robots.txt 存在且声明了 sitemap', () => {
   assert(fs.existsSync(p), '缺少 dist/robots.txt');
   const txt = fs.readFileSync(p, 'utf8');
   assert(
-    /^Sitemap:\s*https:\/\/mimizh\.dpdns\.org\/sitemap-index\.xml\s*$/m.test(txt),
+    /^Sitemap:\s*https:\/\/mimizh\.20250430\.xyz\/sitemap-index\.xml\s*$/m.test(txt),
     'robots.txt 里没有正确的 Sitemap 行'
   );
 });

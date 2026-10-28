@@ -47,7 +47,7 @@ function remarkAssetLinks() {
 }
 
 export default defineConfig({
-  site: 'https://mimizh.dpdns.org',
+  site: 'https://mimizh.20250430.xyz',
   integrations: [
     astroExpressiveCode({
       // 双主题：跟随站点 data-theme 切换，浅色模式下不再出现深色代码块

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mimizh.dpdns.org/sitemap-index.xml
+Sitemap: https://mimizh.20250430.xyz/sitemap-index.xml

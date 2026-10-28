@@ -7,7 +7,7 @@ export const SITE = {
   author: 'mimizh',
   lang: 'zh-CN',
   /** 与 astro.config.mjs 的 site 保持一致 */
-  url: 'https://mimizh.dpdns.org',
+  url: 'https://mimizh.20250430.xyz',
 } as const;
 
 /** 项目状态 → 颜色 */
