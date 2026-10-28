@@ -368,12 +368,23 @@ const navItems = [
       var ov = $('search-ov');
       if (ov) ov.addEventListener('click', function (e) { if (e.target === this) closeSearch(); });
 
+      // ☰：文件夹页打开目录树，正文页打开本页目录（同一个抽屉位置）
       var bm = $('btn-menu');
       if (bm) bm.addEventListener('click', function () {
-        var sb = $('sb'), scr = $('sb-scrim');
+        var sb = $('sb') || $('doc-toc'), scr = $('sb-scrim');
         if (sb) sb.classList.toggle('open');
         if (scr) scr.classList.toggle('open');
       });
+      var dt = $('doc-toc');
+      if (dt) {
+        var closeToc = function () {
+          dt.classList.remove('open');
+          var s = $('sb-scrim'); if (s) s.classList.remove('open');
+        };
+        dt.addEventListener('click', function (e) { if (e.target.closest('a')) closeToc(); });
+        var tsc = $('sb-scrim');
+        if (tsc) tsc.addEventListener('click', closeToc);
+      }
 
       // 图片放大
       var lb = $('lightbox');
@@ -490,6 +501,13 @@ const navItems = [
         });
         if (!cur && lis[0]) cur = lis[0].getAttribute('data-id');
         lis.forEach(function (li) { li.classList.toggle('on', li.getAttribute('data-id') === cur); });
+        // 目录比视口长时，让高亮项留在目录栏可见范围内（只滚目录栏自身）
+        var col = $('doc-toc'), on = col && col.querySelector('.toc-li.on');
+        if (on && col.scrollHeight > col.clientHeight) {
+          var top = on.offsetTop, pad = 48;  // 目录栏是 sticky/fixed，即 offsetParent
+          if (top < col.scrollTop + pad) col.scrollTop = top - pad;
+          else if (top > col.scrollTop + col.clientHeight - pad) col.scrollTop = top - col.clientHeight + pad;
+        }
         D.querySelectorAll('.docs-sb-link').forEach(function (l) {
           l.classList.toggle('on', l.getAttribute('data-id') === cur);
         });

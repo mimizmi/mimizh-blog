@@ -86,7 +86,7 @@ const secEntries = ancestors.length > 0
   activeNav="wiki"
   breadcrumbs={breadcrumbs}
   accent={sectionColor}
-  hasSidebar={true}
+  hasSidebar={!isNote || toc.length > 0 || secEntries.length > 0}
   ogType={isNote ? 'article' : 'website'}
   ogImage={isNote ? `/og/wiki/${node.segments.join('/')}.png` : undefined}
   description={isNote
@@ -94,7 +94,8 @@ const secEntries = ancestors.length > 0
     : `${node.name} 分类下的 ${node.count} 条 Wiki 笔记`}
 >
   <div class="main">
-    <Sidebar nodes={tree} ancestors={ancestors} currentNode={node} basePath="/wiki/" label="Wiki" />
+    {/* 文件夹页保留目录树用于浏览；正文页已有面包屑，侧栏让位给本页目录 */}
+    {!isNote && <Sidebar nodes={tree} ancestors={ancestors} currentNode={node} basePath="/wiki/" label="Wiki" />}
 
     {!isNote ? (
       <div class="main-col">
@@ -137,7 +138,38 @@ const secEntries = ancestors.length > 0
       </div>
     ) : (
       <div class="main-col">
-        <div class="doc-layout">
+        {(toc.length > 0 || secEntries.length > 0) && <div class="sb-scrim" id="sb-scrim"></div>}
+        <div class={`doc-layout${toc.length > 0 || secEntries.length > 0 ? '' : ' no-toc'}`}>
+          {(toc.length > 0 || secEntries.length > 0) && (
+            <nav class="doc-toc-col" id="doc-toc" data-pagefind-ignore aria-label="本页目录">
+              {toc.length > 0 && (
+                <>
+                  <div class="doc-toc-lbl">目录</div>
+                  <ul class="toc-ul">
+                    {toc.map(t => (
+                      <li class={`toc-li${t.level === 3 ? ' h3' : t.level === 4 ? ' h4' : ''}`} data-id={t.id}>
+                        <a href={`#${t.id}`} style="display:block;color:inherit;text-decoration:none">{t.label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {secEntries.length > 0 && (
+                <>
+                  <div class="doc-toc-lbl" style="margin-top:1.6rem">本节其他</div>
+                  <ul class="toc-ul">
+                    {secEntries.map(e => (
+                      <li class="toc-li">
+                        <a href={`/wiki/${e.segments.join('/')}/`} style="display:block;color:inherit;text-decoration:none">
+                          {e.wikiEntry?.data.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </nav>
+          )}
           <div class="doc-main fu" data-pagefind-body>
             <a class="back" data-pagefind-ignore href={`/wiki/${node.segments.slice(0, -1).join('/')}/`}>
               ← {ancestors.length > 1 ? ancestors[ancestors.length - 2]?.name : 'Wiki'}
@@ -178,36 +210,6 @@ const secEntries = ancestors.length > 0
               </section>
             )}
           </div>
-          {(toc.length > 0 || secEntries.length > 0) && (
-            <nav class="doc-toc-col" data-pagefind-ignore aria-label="本页目录">
-              {toc.length > 0 && (
-                <>
-                  <div class="doc-toc-lbl">目录</div>
-                  <ul class="toc-ul">
-                    {toc.map(t => (
-                      <li class={`toc-li${t.level === 3 ? ' h3' : t.level === 4 ? ' h4' : ''}`} data-id={t.id}>
-                        <a href={`#${t.id}`} style="display:block;color:inherit;text-decoration:none">{t.label}</a>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              {secEntries.length > 0 && (
-                <>
-                  <div class="doc-toc-lbl" style="margin-top:1.6rem">本节其他</div>
-                  <ul class="toc-ul">
-                    {secEntries.map(e => (
-                      <li class="toc-li">
-                        <a href={`/wiki/${e.segments.join('/')}/`} style="display:block;color:inherit;text-decoration:none">
-                          {e.wikiEntry?.data.title}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </nav>
-          )}
         </div>
       </div>
     )}

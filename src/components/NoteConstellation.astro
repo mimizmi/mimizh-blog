@@ -1,0 +1,171 @@
+---
+// 首页「笔记星图」：中心是站点，一圈是笔记的顶层分类，分类周围的小点是其下的笔记。
+// 布局在构建期按名字做种子算出，同样的内容每次构建得到同一张图。
+// 动画全部是 CSS：全局的 prefers-reduced-motion 规则会把它们压到瞬时结束，
+// 所以每个元素的「终态」必须就是可见的静态图。
+export interface Leaf { title: string; href: string }
+export interface Cat { label: string; href: string; color: string; leaves: Leaf[] }
+export interface Props { cats: Cat[] }
+
+const { cats } = Astro.props;
+
+const W = 640, H = 250;
+const CX = W / 2, CY = H / 2 - 4;
+const RX = 196, RY = 84;
+const MAX_LEAVES = 8;
+
+function seed(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+}
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+const n = Math.max(cats.length, 1);
+const nodes = cats.map((c, i) => {
+  const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+  const x = CX + RX * Math.cos(a), y = CY + RY * Math.sin(a);
+  const rnd = seed(c.label);
+
+  // 中心 → 分类：二次曲线，控制点沿法向偏一点，看起来不那么僵
+  const dx = x - CX, dy = y - CY, len = Math.hypot(dx, dy);
+  const bend = (i % 2 ? 1 : -1) * (0.1 + rnd() * 0.08) * len;
+  const qx = (CX + x) / 2 - (dy / len) * bend, qy = (CY + y) / 2 + (dx / len) * bend;
+  const edge = `M${r1(CX)} ${r1(CY)}Q${r1(qx)} ${r1(qy)} ${r1(x)} ${r1(y)}`;
+
+  // 外侧方向留给文字，内侧是连线，笔记点就向两侧散开
+  const out = Math.atan2(dy / RY, dx / RX);
+  const k = Math.min(c.leaves.length, MAX_LEAVES);
+  const leaves = c.leaves.slice(0, k).map((l, j) => {
+    const side = j % 2 ? 1 : -1;
+    const la = out + side * (1.05 + rnd() * 1.1);
+    const lr = 13 + (j >> 1) * 4 + rnd() * 6;
+    return { ...l, x: r1(x + lr * Math.cos(la)), y: r1(y + lr * Math.sin(la)), s: r1(1.4 + rnd() * 1.1) };
+  });
+
+  // 文字放在节点外侧：左右两侧的节点横向对齐，正上/正下的居中
+  const ux = Math.cos(out), uy = Math.sin(out);
+  const anchor = ux > 0.3 ? 'start' : ux < -0.3 ? 'end' : 'middle';
+  const lx = anchor === 'middle' ? x : x + ux * 12;
+  const ly = anchor === 'middle' ? (uy < 0 ? y - 13 : y + 21) : y + uy * 10 + 3.5;
+  return { ...c, i, x: r1(x), y: r1(y), edge, leaves, lx: r1(lx), ly: r1(ly), anchor };
+});
+
+// 背景星点
+const sky = seed('mimizh-sky');
+const stars = Array.from({ length: 30 }, (_, i) => ({
+  x: r1(sky() * W), y: r1(sky() * H), r: r1(0.5 + sky() * 0.8), d: r1(sky() * 6), i,
+}));
+
+const total = cats.reduce((s, c) => s + c.leaves.length, 0);
+---
+
+<figure class="cg" aria-label={`笔记星图：${cats.length} 个分类，共 ${total} 篇笔记`}>
+  <svg viewBox={`0 0 ${W} ${H}`} role="group">
+    <g class="cg-sky" aria-hidden="true">
+      {stars.map(s => <circle class="cg-star" cx={s.x} cy={s.y} r={s.r} style={`--d:${s.d}s`} />)}
+    </g>
+
+    {nodes.map(c => (
+      <g class="cg-cat" style={`--c:${c.color};--i:${c.i}`}>
+        <path class="cg-edge" d={c.edge} pathLength="1" aria-hidden="true" />
+        <circle class="cg-pulse" r="2.2" style={`offset-path:path('${c.edge}')`} aria-hidden="true" />
+        {c.leaves.map((l, j) => (
+          <a href={l.href} class="cg-leaf" style={`--j:${j}`}>
+            <title>{l.title}</title>
+            <line x1={c.x} y1={c.y} x2={l.x} y2={l.y} />
+            <circle cx={l.x} cy={l.y} r={l.s} />
+          </a>
+        ))}
+        <a href={c.href} class="cg-hit">
+          <title>{`${c.label} · ${c.leaves.length} 篇`}</title>
+          <circle class="cg-halo" cx={c.x} cy={c.y} r="11" />
+          <circle class="cg-dot" cx={c.x} cy={c.y} r="5" />
+          <text class="cg-label" x={c.lx} y={c.ly} text-anchor={c.anchor}>{c.label}</text>
+        </a>
+      </g>
+    ))}
+
+    <g class="cg-hub" aria-hidden="true">
+      <circle class="cg-ring" cx={CX} cy={CY} r="15" />
+      <circle class="cg-ring cg-ring2" cx={CX} cy={CY} r="15" />
+      <circle class="cg-core" cx={CX} cy={CY} r="15" />
+      <text class="cg-mz" x={CX} y={CY + 4} text-anchor="middle">mz</text>
+    </g>
+  </svg>
+</figure>
+
+<style>
+  .cg{margin:-1.25rem 0 1.75rem;user-select:none}
+  .cg svg{display:block;width:100%;height:auto;overflow:visible}
+
+  /* 背景星点：轻微闪烁 */
+  .cg-star{fill:var(--tx3);opacity:.35;animation:cg-twinkle 5s ease-in-out infinite var(--d)}
+
+  /* 连线：依次描出 */
+  .cg-edge{fill:none;stroke:color-mix(in srgb,var(--c) 45%,var(--bd));stroke-width:1.1;
+    stroke-dasharray:1;stroke-dashoffset:1;
+    animation:cg-draw 1s var(--ease) forwards calc(.15s + var(--i) * .1s);
+    transition:stroke .25s,stroke-width .25s}
+
+  /* 沿连线流动的光点；不支持 offset-path 的浏览器直接不显示 */
+  .cg-pulse{fill:var(--c);opacity:0;display:none}
+  @supports (offset-path:path('M0 0')){
+    .cg-pulse{display:block;offset-rotate:0deg;
+      animation:cg-flow 4.8s ease-in-out infinite calc(1.6s + var(--i) * .7s)}
+  }
+
+  /* 笔记点 */
+  .cg-leaf line{stroke:color-mix(in srgb,var(--c) 30%,transparent);stroke-width:.7}
+  .cg-leaf circle{fill:var(--c);opacity:.75;transition:opacity .2s}
+  .cg-leaf{animation:cg-fade .5s var(--ease) both calc(.8s + var(--i) * .1s + var(--j) * .04s)}
+  .cg-leaf:hover circle{opacity:1}
+
+  /* 分类节点 */
+  .cg-hit{cursor:pointer;outline:none}
+  .cg-dot,.cg-halo{transform-box:fill-box;transform-origin:center}
+  .cg-dot{fill:var(--c);animation:cg-pop .55s var(--ease) both calc(.55s + var(--i) * .1s);transition:transform .25s var(--ease)}
+  .cg-halo{fill:color-mix(in srgb,var(--c) 16%,transparent);stroke:color-mix(in srgb,var(--c) 40%,transparent);stroke-width:.8;
+    transform:scale(.6);opacity:0;transition:transform .3s var(--ease),opacity .3s}
+  .cg-label{font-family:var(--fm);font-size:10.5px;fill:var(--tx2);
+    paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round;
+    animation:cg-fade .5s var(--ease) both calc(.75s + var(--i) * .1s);transition:fill .2s}
+
+  .cg-cat{transition:opacity .25s}
+  .cg-cat:hover .cg-edge,.cg-cat:focus-within .cg-edge{stroke:var(--c);stroke-width:1.6}
+  .cg-hit:hover .cg-halo,.cg-hit:focus-visible .cg-halo{transform:scale(1);opacity:1}
+  .cg-hit:hover .cg-dot,.cg-hit:focus-visible .cg-dot{transform:scale(1.25)}
+  .cg-hit:hover .cg-label,.cg-hit:focus-visible .cg-label{fill:var(--c)}
+  /* 悬停一个分类时，其余分类退后 */
+  .cg svg:has(.cg-cat:hover) .cg-cat:not(:hover){opacity:.35}
+
+  /* 中心 */
+  .cg-core{fill:var(--accent)}
+  .cg-mz{font-family:var(--fh);font-size:12px;font-weight:600;fill:var(--bg);letter-spacing:-.02em}
+  .cg-ring{fill:none;stroke:var(--accent);stroke-width:1;transform-box:fill-box;transform-origin:center;opacity:0;
+    animation:cg-ripple 3.6s ease-out infinite 1s}
+  .cg-ring2{animation-delay:2.8s}
+  .cg-hub{animation:cg-fade .6s var(--ease) both}
+
+  @keyframes cg-draw{to{stroke-dashoffset:0}}
+  @keyframes cg-pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes cg-fade{from{opacity:0}to{opacity:1}}
+  @keyframes cg-twinkle{0%,100%{opacity:.35}50%{opacity:.08}}
+  @keyframes cg-ripple{from{transform:scale(1);opacity:.55}to{transform:scale(2.6);opacity:0}}
+  @keyframes cg-flow{
+    0%{offset-distance:0%;opacity:0}
+    15%{opacity:.9}
+    85%{opacity:.9}
+    100%{offset-distance:100%;opacity:0}
+  }
+
+  /* 窄屏上文字缩得太小，只保留图形 */
+  @media(max-width:560px){
+    .cg-label{display:none}
+    .cg{margin:-.5rem 0 1.25rem}
+  }
+</style>

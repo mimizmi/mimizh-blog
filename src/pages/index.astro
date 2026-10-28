@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import NoteConstellation from '../components/NoteConstellation.astro';
 import { getCollection } from 'astro:content';
 import { buildNoteTree, buildWikiTree, buildProjectTree, flattenNodes, getFolderColor } from '../utils/tree';
 import type { TreeNode } from '../utils/tree';
@@ -65,11 +66,25 @@ const sections = [
   { label: 'Wiki', href: '/wiki/', count: countOf(wikiTree), color: 'var(--wiki)' },
   { label: '标签', href: '/tags/', count: tagCount, color: 'var(--reading)' },
 ];
+
+// ── 首页星图：笔记顶层分类 + 各自的笔记 ──
+const cats = noteTree
+  .filter((n) => n.type === 'folder')
+  .map((f) => ({
+    label: f.name,
+    href: `/notes/${f.segments.join('/')}/`,
+    color: getFolderColor(f.segments.join('/')),
+    leaves: flattenNodes(f.children || [])
+      .filter((n) => !n.isDraft)
+      .map((n) => ({ title: n.note?.data.title || n.name, href: `/notes/${n.segments.join('/')}/` })),
+  }))
+  .filter((c) => c.leaves.length > 0);
 ---
 
 <BaseLayout title={h.name || 'mimizh'} activeNav="home">
   <div class="main main-col">
     <div class="home-wrap fu">
+      {cats.length > 0 && <NoteConstellation cats={cats} />}
       <h1 class="home-name">{h.greeting || `你好，我是 <em>${h.name || 'mimizh'}</em>`}</h1>
       {bio.map((p: string) => <p class="home-p">{p.trim()}</p>)}
       <hr class="home-hr" />

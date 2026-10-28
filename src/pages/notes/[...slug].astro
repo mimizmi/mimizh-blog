@@ -92,7 +92,7 @@ if (isNote && node.note) {
   activeNav="notes"
   breadcrumbs={breadcrumbs}
   accent={sectionColor}
-  hasSidebar={true}
+  hasSidebar={!isNote || toc.length > 0}
   ogType={isNote ? 'article' : 'website'}
   ogImage={isNote ? `/og/notes/${node.segments.join('/')}.png` : undefined}
   description={isNote
@@ -100,13 +100,16 @@ if (isNote && node.note) {
     : `${node.name} 目录下的 ${directNoteCount} 篇笔记`}
 >
   <div class="main">
-    <Sidebar
-      nodes={tree}
-      ancestors={ancestors}
-      currentNode={node}
-      basePath="/notes/"
-      label="笔记"
-    />
+    {/* 文件夹页保留目录树用于浏览；正文页已有面包屑，侧栏让位给本页目录 */}
+    {!isNote && (
+      <Sidebar
+        nodes={tree}
+        ancestors={ancestors}
+        currentNode={node}
+        basePath="/notes/"
+        label="笔记"
+      />
+    )}
 
     {!isNote ? (
       /* ── Folder listing ── */
@@ -162,7 +165,20 @@ if (isNote && node.note) {
     ) : (
       /* ── Note detail ── */
       <div class="main-col">
-        <div class="doc-layout">
+        {toc.length > 0 && <div class="sb-scrim" id="sb-scrim"></div>}
+        <div class={`doc-layout${toc.length > 0 ? '' : ' no-toc'}`}>
+          {toc.length > 0 && (
+            <nav class="doc-toc-col" id="doc-toc" data-pagefind-ignore aria-label="本页目录">
+              <div class="doc-toc-lbl">目录</div>
+              <ul class="toc-ul">
+                {toc.map(t => (
+                  <li class={`toc-li${t.level === 3 ? ' h3' : t.level === 4 ? ' h4' : ''}`} data-id={t.id}>
+                    <a href={`#${t.id}`} style="display:block;color:inherit;text-decoration:none">{t.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
           <div class="doc-main fu" data-pagefind-body>
             <a class="back" data-pagefind-ignore href={`/notes/${node.segments.slice(0, -1).join('/')}/`}>← 返回</a>
             <a class="doc-cat" href={`/notes/${node.segments.slice(0, -1).join('/')}/`}
@@ -195,18 +211,6 @@ if (isNote && node.note) {
               </section>
             )}
           </div>
-          {toc.length > 0 && (
-            <nav class="doc-toc-col" data-pagefind-ignore aria-label="本页目录">
-              <div class="doc-toc-lbl">目录</div>
-              <ul class="toc-ul">
-                {toc.map(t => (
-                  <li class={`toc-li${t.level === 3 ? ' h3' : t.level === 4 ? ' h4' : ''}`} data-id={t.id}>
-                    <a href={`#${t.id}`} style="display:block;color:inherit;text-decoration:none">{t.label}</a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          )}
         </div>
       </div>
     )}

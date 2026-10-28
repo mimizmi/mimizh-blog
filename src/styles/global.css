@@ -2,7 +2,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --fh:'Lora Variable','Noto Serif SC Subset',Georgia,serif;--fb:'Source Serif 4 Variable','Noto Serif SC Subset',Georgia,serif;--fm:'JetBrains Mono Variable','Noto Sans SC Subset',monospace;
-  --nav-h:50px;--sb:236px;--toc:196px;
+  --nav-h:50px;--sb:236px;--toc:224px;
   --fs-body:1;--fs-ui:1;--content-width:760px;
   --ease:cubic-bezier(.32,.72,0,1);
   /* --sec：当前板块强调色，由页面按顶层目录注入，未注入时回落到品牌色 */
@@ -170,9 +170,12 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
 .fd{font-size:calc(.68rem * var(--fs-ui));color:var(--tx3);font-family:var(--fm);white-space:nowrap}
 
 /* Doc layout */
-.doc-layout{display:grid;grid-template-columns:1fr var(--toc)}
+/* 目录在左；宽屏时右侧补一列等宽空白，让正文仍在视口居中 */
+.doc-layout{display:grid;grid-template-columns:var(--toc) minmax(0,1fr)}
+.doc-layout.no-toc{grid-template-columns:minmax(0,1fr)}
+@media(min-width:1320px){.doc-layout:not(.no-toc){grid-template-columns:var(--toc) minmax(0,1fr) var(--toc)}}
 .doc-main{padding:2.5rem 2.75rem 5rem;min-width:0;max-width:calc(var(--content-width,700px) - 60px);margin:0 auto;width:100%}
-.doc-toc-col{padding:3.8rem 1.3rem 2rem;position:sticky;top:var(--nav-h);max-height:calc(100vh - var(--nav-h));overflow-y:auto;align-self:start;border-left:1px solid var(--bd)}
+.doc-toc-col{padding:3.8rem .9rem 2rem 1.75rem;position:sticky;top:var(--nav-h);max-height:calc(100vh - var(--nav-h));overflow-y:auto;overscroll-behavior:contain;align-self:start}
 .doc-toc-lbl{font-size:calc(.62rem * var(--fs-ui));letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:.68rem;font-family:var(--fm)}
 .toc-ul{list-style:none}
 .toc-li{position:relative;font-size:calc(.75rem * var(--fs-ui));color:var(--tx3);padding:.26rem 0 .26rem .72rem;border-left:1.5px solid var(--bd);cursor:pointer;transition:color .18s,border-color .18s,transform .18s var(--ease);line-height:1.35}
@@ -229,7 +232,11 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
 .doc-body li{margin-bottom:.28rem}
 .doc-body ol>li::marker{color:var(--tx3);font-family:var(--fm);font-size:.85em}
 .doc-body ul>li::marker{color:color-mix(in srgb,var(--sec) 70%,var(--tx3))}
-.doc-body blockquote{position:relative;border-left:2px solid color-mix(in srgb,var(--sec) 55%,transparent);margin:1.7rem 0;padding:.2rem 1.2rem;font-style:italic;color:var(--tx2);background:linear-gradient(90deg,color-mix(in srgb,var(--sec) 5%,transparent),transparent 60%)}
+/* 引用块：笔记里多用来标重点，所以用正体、正文色和均匀底色，不做渐隐 */
+.doc-body blockquote{position:relative;margin:1.6rem 0;padding:.8rem 1.15rem;border-left:3px solid var(--sec);border-radius:0 6px 6px 0;color:var(--tx);background:color-mix(in srgb,var(--sec) 7%,var(--bg2))}
+.doc-body blockquote>*:last-child{margin-bottom:0}
+.doc-body blockquote p{margin-bottom:.6rem;font-weight:370}
+.doc-body blockquote blockquote{margin:.7rem 0;background:color-mix(in srgb,var(--sec) 5%,var(--bg))}
 .doc-body :not(pre)>code{font-family:var(--fm);font-size:calc(.79em * var(--fs-body));background:color-mix(in srgb,var(--sec) 8%,var(--sf));border:1px solid color-mix(in srgb,var(--sec) 16%,var(--bd));padding:.1em .38em;border-radius:4px;color:color-mix(in srgb,var(--sec) 72%,var(--tx));word-break:break-word}
 .doc-body a code{color:var(--sec)}
 .doc-body pre{border:1px solid var(--bd);border-radius:6px;margin:1.35rem 0;font-size:calc(.79rem * var(--fs-body))}
@@ -424,8 +431,13 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
 /* Mobile */
 .sb-scrim{display:none}
 @media(max-width:860px){
-  .docs-sb,.docs-toc,.doc-toc-col{display:none}
+  .docs-sb,.docs-toc{display:none}
   .doc-layout,.docs-layout{grid-template-columns:1fr}
+  /* 本页目录改为左侧抽屉，由导航栏 ☰ 唤出 */
+  .doc-toc-col{position:fixed;top:var(--nav-h);left:0;bottom:0;max-height:none;align-self:stretch;z-index:120;width:min(80vw,280px);
+      padding:1.2rem 1rem 2rem 1.2rem;background:var(--bg2);border-right:1px solid var(--bd);
+      transform:translateX(-101%);transition:transform .26s var(--ease);box-shadow:6px 0 28px -14px var(--sh)}
+  .doc-toc-col.open{transform:translateX(0)}
   .doc-main,.docs-main,.page,.home-wrap{padding:1.5rem}
   .nav-bc{display:none}
   .nav-menu{display:flex}
@@ -438,7 +450,10 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:inherit}
   .sb-scrim.open{opacity:1;pointer-events:auto}
 }
 @media(max-width:600px){
-  html{font-size:14px}.nav{padding:0 1rem}
+  html{font-size:14px}.nav{padding:0 1rem;gap:.4rem}
+  .nav-btn{padding:.27rem .42rem;white-space:nowrap}
+  .nav-btn.on::after{left:.42rem;right:.42rem}
+  .nav-sep{display:none}
   .proj-grid{grid-template-columns:1fr}.cat-grid{grid-template-columns:1fr}
   .settings-panel{left:.5rem;right:.5rem;width:auto}
   .doc-body .table-wrap table{min-width:34rem}
