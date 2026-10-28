@@ -35,6 +35,13 @@ OOP最大的优点是万物皆对象，使得高级语言能以更适合人思�
 ### mutation的并发问题
 ![454](assets/Complexity%20of%20object-oriented%20programming/file-20261013112350466.png)
 
+#### reconciliation algorithm
+
+When previous differs from current, it means that concurrent mutations have run. In order to determine whether there is a conflict, we calculate two diffs: the diff between previous and current and the diff between previous and next. If the intersection between the two diffs is empty, it means there is no conflict. We can safely patch the changes between previous to next into current.
+
+
+### Unit Tests
+
 
 
 > PRINCIPLE #1 Represent data entities with generic data structures.

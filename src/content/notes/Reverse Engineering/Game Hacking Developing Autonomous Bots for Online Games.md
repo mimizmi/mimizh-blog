@@ -63,3 +63,42 @@ private:
 
 > 忽然发现做完一次指针扫描分析，所谓指针和实例地址的概念就豁然开朗了。
 
+### Lua Scripting Enviroment
+
+虽然CE可以修改内存中的值和地址，并且可以内置基于lua的脚本引擎执行lua脚本，但通常情况中CE只作为初步的内存分析研究工作，并不实际进行`hackers`的内容。
+
+**在Lua主界面，按`CTRL + ALT + L`打开lua脚本窗口。**
+
+
+## Debugging Games With OllyDBG
+
+> You can scratch the surface of what happens as a game runs with Cheat Engine, but with a good debugger, you can dig deeper until you understand the game’s structure and execution flow. 
+
+[odbg110](http://www.ollydbg.de/)
+### 插件
+
+
+[OpenRCE]()(http://www.openrce.org/downloads/browse/OllyDbg_Plugins)
+
+[tuts4you](http://www.tuts4you.com/download.php?list.9/)
+
+#### Copying Assembly Code with Asm2Clipboard
+
+#### Adding Cheat Engine to OllyDbg with Cheat Utility
+
+#### Controlling OllyDbg Through the Command Line
+
+#### Visualizing Control Flow with OllyFlow
+
+简单尝试，attach 有时候找不到，直接使用open通过ollydbg进行启动。启动后注意观看CPU窗口的模块，在游戏主模块中右键`search for -> referenced text string -> 搜索对应字符串`。找到声明的地址，`ctrl+G`快速在CPU窗口中跳转地址，观察前文命令，`CMP JE JB`等等判断以及跳转命令，当找到`CMP`后命令有关于跳转越过目标字符串声明地址的分支，即为目标**if statement**，进而修改判断。
+
+
+
+
+## Process Monitor 
+
+https://learn.microsoft.com/zh-cn/sysinternals/downloads/
+
+>You can learn a lot about a game simply by exploring how it interacts with the registry, filesystem, and network. Process Monitor is a powerful system-monitoring tool that logs such events in real time and lets you seamlessly integrate the data into a debugging session. 
+
+
