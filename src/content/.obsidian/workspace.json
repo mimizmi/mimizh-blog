@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "notes/Programing/Computer/编译原理.md",
+                "file": "notes/Machine Learning/LLMs in Production.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "编译原理"
+              "title": "LLMs in Production"
             }
           }
         ]
@@ -184,10 +184,13 @@
   },
   "active": "221b9a360d9d437a",
   "lastOpenFiles": [
+    "notes/Programing/Data-Oriented Programming/Complexity of object-oriented programming.md",
+    "notes/Machine Learning/LLMs in Production.md",
+    "notes/Machine Learning",
+    "notes/Programing/Computer/编译原理.md",
     "notes/Game Development/Game Script Programming/Game Scripts.md",
     "notes/Reverse Engineering/Game Hacking Developing Autonomous Bots for Online Games.md",
     "notes/Reverse Engineering/加密与解密.md",
-    "notes/Programing/Computer/编译原理.md",
     "notes/Distributed System/MIT S6.824/01_Fault Tolerant.md",
     "notes/Programing/Computer",
     "notes/Distributed System/MIT S6.824/00_Key Value Server.md",
@@ -202,7 +205,6 @@
     "notes/Game Development/Game Script Programming/assets/Game Scripts/file-20261103151548804.png",
     "notes/Game Development/Game Script Programming/assets/Game Scripts",
     "notes/Game Development/Game Script Programming/assets",
-    "notes/Programing/Data-Oriented Programming/Complexity of object-oriented programming.md",
     "notes/Game Development/Game Script Programming",
     "Bjarne.md",
     "notes/Programing/CPP",
@@ -214,7 +216,6 @@
     "notes/Reverse Engineering",
     "notes/Programing/CSS/assets/CSS In Depth/file-20261015175526077.png",
     "notes/Programing/CSS/assets/CSS In Depth",
-    "notes/Programing/CSS/assets",
     "notes/Game Development/Unity/Shaders/Properties of a polygonal object.md",
     "notes/Game Development/Unity/Shaders/assets/Properties of a polygonal object/file-20261014121259494.png",
     "notes/Game Development/Unity/DOTS/Animation Baking System.md",
@@ -225,7 +226,6 @@
     "notes/Programing/CSharp In Depth 4ed/Iterator Block.md",
     "notes/Game Development/Unity/MagicGameHarness/02-Primitives-Deep-Dive.md",
     "notes/Game Development/Unity/MagicGameHarness/01-Index.md",
-    "notes/Game Development/Unity/MagicGameHarness/00-Review-Report.md",
-    "notes/Programing/CSharp In Depth 4/未命名.md"
+    "notes/Game Development/Unity/MagicGameHarness/00-Review-Report.md"
   ]
 }

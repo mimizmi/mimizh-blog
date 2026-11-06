@@ -73,6 +73,12 @@ DOP中的验证其实很类似于OOP中的类型定义，区别在于是处在�
 * [Ruby](http://mng.bz/5KG8)
 
 
+#### Persistent data structures
+
+[P. Bagwell "Ideal hash tree"](https://lampwww.epfl.ch/papers/idealhashtrees.pdf)
+
+#### Database operations
+
 
 
 
