@@ -184,6 +184,9 @@
   },
   "active": "221b9a360d9d437a",
   "lastOpenFiles": [
+    "notes/Machine Learning/assets/LLMs in Production/file-20261107161727686.png",
+    "notes/Machine Learning/assets/LLMs in Production",
+    "notes/Machine Learning/assets",
     "notes/Programing/Data-Oriented Programming/Complexity of object-oriented programming.md",
     "notes/Machine Learning/LLMs in Production.md",
     "notes/Machine Learning",
@@ -213,9 +216,7 @@
     "projects/logseq-export.md",
     "projects/Game Harness In Unity.md",
     "notes/Programing/CSS/CSS In Depth.md",
-    "notes/Reverse Engineering",
     "notes/Programing/CSS/assets/CSS In Depth/file-20261015175526077.png",
-    "notes/Programing/CSS/assets/CSS In Depth",
     "notes/Game Development/Unity/Shaders/Properties of a polygonal object.md",
     "notes/Game Development/Unity/Shaders/assets/Properties of a polygonal object/file-20261014121259494.png",
     "notes/Game Development/Unity/DOTS/Animation Baking System.md",
@@ -225,7 +226,6 @@
     "notes/Database/CMU 115-445/01_Buffer Pool Manager.md",
     "notes/Programing/CSharp In Depth 4ed/Iterator Block.md",
     "notes/Game Development/Unity/MagicGameHarness/02-Primitives-Deep-Dive.md",
-    "notes/Game Development/Unity/MagicGameHarness/01-Index.md",
-    "notes/Game Development/Unity/MagicGameHarness/00-Review-Report.md"
+    "notes/Game Development/Unity/MagicGameHarness/01-Index.md"
   ]
 }
