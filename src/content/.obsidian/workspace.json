@@ -13,6 +13,20 @@
             "state": {
               "type": "markdown",
               "state": {
+                "file": "wiki/lang/rust-ownership-cheatsheet.md",
+                "mode": "source",
+                "source": true
+              },
+              "icon": "lucide-file",
+              "title": "rust-ownership-cheatsheet"
+            }
+          },
+          {
+            "id": "a6fb9ae130e66c82",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
                 "file": "notes/Machine Learning/LLMs in Production.md",
                 "mode": "source",
                 "source": false
@@ -21,7 +35,8 @@
               "title": "LLMs in Production"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -182,13 +197,19 @@
       "bases:新建数据库": false
     }
   },
-  "active": "221b9a360d9d437a",
+  "active": "a6fb9ae130e66c82",
   "lastOpenFiles": [
+    "notes/Machine Learning/assets/LLMs in Production/file-20261110161445138.png",
+    "wiki/lang/rust-ownership-cheatsheet.md",
+    "wiki/cs/bloom-filter.md",
+    "projects/Game Harness In Unity.md",
+    "projects/logseq-export.md",
+    "notes/Machine Learning/LLMs in Production.md",
+    "notes/Machine Learning/assets/LLMs in Production/file-20261108100144669.png",
     "notes/Machine Learning/assets/LLMs in Production/file-20261107161727686.png",
     "notes/Machine Learning/assets/LLMs in Production",
     "notes/Machine Learning/assets",
     "notes/Programing/Data-Oriented Programming/Complexity of object-oriented programming.md",
-    "notes/Machine Learning/LLMs in Production.md",
     "notes/Machine Learning",
     "notes/Programing/Computer/编译原理.md",
     "notes/Game Development/Game Script Programming/Game Scripts.md",
@@ -212,9 +233,6 @@
     "Bjarne.md",
     "notes/Programing/CPP",
     "notes/Networking/Stanford CS144/_Schedule.md",
-    "wiki/cs/bloom-filter.md",
-    "projects/logseq-export.md",
-    "projects/Game Harness In Unity.md",
     "notes/Programing/CSS/CSS In Depth.md",
     "notes/Programing/CSS/assets/CSS In Depth/file-20261015175526077.png",
     "notes/Game Development/Unity/Shaders/Properties of a polygonal object.md",
@@ -225,7 +243,6 @@
     "notes/Programing/Algorithm/排序.md",
     "notes/Database/CMU 115-445/01_Buffer Pool Manager.md",
     "notes/Programing/CSharp In Depth 4ed/Iterator Block.md",
-    "notes/Game Development/Unity/MagicGameHarness/02-Primitives-Deep-Dive.md",
-    "notes/Game Development/Unity/MagicGameHarness/01-Index.md"
+    "notes/Game Development/Unity/MagicGameHarness/02-Primitives-Deep-Dive.md"
   ]
 }
